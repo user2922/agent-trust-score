@@ -30,10 +30,10 @@ agent-trust-mcp = "agent_trust.mcp_server:main"
 
 [project.optional-dependencies]
 dev = [
-    # black is the LOCAL stand-in for `ruff format`: the ruff binary and mypy's
-    # compiled extension cannot execute on the development machine (Windows ARM64
-    # with Application Control). black is pure Python, runs there, and produces
-    # output `ruff format --check` accepts. CI still verifies with ruff.
+    # Emergency fallback formatter only -- NOT a gate. `ruff format` is the single
+    # formatting authority (scripts/check_all.sh and CI both run it). black is pure
+    # Python, so it still runs if Application Control blocks the ruff binary again;
+    # the two disagree on implicit string concatenation, so never run both as gates.
     "black==26.5.1",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",

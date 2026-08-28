@@ -98,8 +98,7 @@ def validate_url(url: str, allow_any_host: bool = False) -> str:
     if not allow_any_host and host.lower() not in ALLOWED_HOSTS:
         allowed = ", ".join(sorted(ALLOWED_HOSTS))
         raise HostNotAllowed(
-            f"Host '{host}' is not on the allowlist ({allowed}). "
-            f"Pass --allow-any-host to override."
+            f"Host '{host}' is not on the allowlist ({allowed}). Pass --allow-any-host to override."
         )
     return host
 
