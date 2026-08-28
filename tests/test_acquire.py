@@ -19,9 +19,14 @@ from agent_trust.acquire import (
     resolve_local,
     validate_url,
 )
-from agent_trust.errors import AcquireError, HostNotAllowed, NotAGitRepo
+from agent_trust.errors import (
+    AcquireError,
+    HostNotAllowed,
+    NotAGitRepo,
+    TimeoutExceeded,
+)
 from agent_trust.limits import Budget, Deadline
-from agent_trust.errors import TimeoutExceeded
+from agent_trust.redact import MAX_SNIPPET, snippet
 
 
 def _git(args: list[str], cwd: Path) -> None:
@@ -126,9 +131,11 @@ def test_hooks_are_disabled_by_configuration() -> None:
 
 def test_temp_directory_is_removed_when_the_clone_fails(tmp_path: Path) -> None:
     before = set(Path(tempfile.gettempdir()).glob("agent-trust-*"))
-    with pytest.raises(AcquireError):
-        with acquire("https://github.com/this-org/does-not-exist-xyz", timeout=20):
-            pass  # pragma: no cover - the clone must fail before the body runs
+    with (
+        pytest.raises(AcquireError),
+        acquire("https://github.com/this-org/does-not-exist-xyz", timeout=20),
+    ):
+        pass  # pragma: no cover - the clone must fail before the body runs
     after = set(Path(tempfile.gettempdir()).glob("agent-trust-*"))
     assert after == before, "a temp checkout survived a failed clone"
 
@@ -202,8 +209,6 @@ def test_live_deadline_does_not_raise() -> None:
 
 
 def test_snippet_redacts_the_match_and_bounds_length() -> None:
-    from agent_trust.redact import MAX_SNIPPET, snippet
-
     line = 'AWS = "' + "A" * 400 + '"'
     out = snippet(line, 7, 407)
     assert len(out) <= MAX_SNIPPET
@@ -211,8 +216,6 @@ def test_snippet_redacts_the_match_and_bounds_length() -> None:
 
 
 def test_snippet_strips_escapes_from_surrounding_text() -> None:
-    from agent_trust.redact import snippet
-
     line = "\x1b[31mkey = SECRETVALUE123456\x1b[0m"
     out = snippet(line, 12, len(line) - 4)
     assert "\x1b" not in out
