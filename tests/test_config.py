@@ -57,12 +57,13 @@ def test_settings_are_frozen() -> None:
 
 def test_config_is_the_only_environment_reader() -> None:
     root = Path(__file__).resolve().parent.parent / "agent_trust"
-    offenders = [
-        path.name
-        for path in root.rglob("*.py")
-        if path.name != "config.py" and ("os.environ" in path.read_text(encoding="utf-8")
-                                         or "getenv" in path.read_text(encoding="utf-8"))
-    ]
+    offenders: list[str] = []
+    for path in root.rglob("*.py"):
+        if path.name == "config.py":
+            continue
+        source = path.read_text(encoding="utf-8")
+        if "os.environ" in source or "getenv" in source:
+            offenders.append(path.name)
     assert offenders == []
 
 
