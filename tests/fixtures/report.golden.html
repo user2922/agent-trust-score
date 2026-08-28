@@ -3,223 +3,513 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agent Trust Score — https://github.com/example/demo</title>
+<title>https://github.com/example/demo — Agent Trust Score</title>
 <style>
+/* Tokens. Light values on bare :root; dark redefined under both the OS media
+   query and an explicit stamp, so a viewer toggle wins either way. Surfaces and
+   status steps are the validated reference palette. */
 :root {
-  --bg: #fbfaf8; --fg: #1c1b19; --muted: #6b6862; --line: #e2ddd5;
-  --card: #ffffff; --accent: #7a5cff;
-  --a: #1f7a4d; --b: #4f7a1f; --c: #9a7a12; --d: #a85a12; --f: #a8261a;
+  color-scheme: light;
+  --plane:      #f9f9f7;
+  --surface:    #fcfcfb;
+  --ink:        #0b0b0b;
+  --ink-2:      #52514e;
+  --ink-3:      #898781;
+  --hairline:   #e1e0d9;
+  --rule:       #c3c2b7;
+  --ring:       rgba(11,11,11,.10);
+
+  --good:     #0ca30c;
+  --warning:  #fab219;
+  --serious:  #ec835a;
+  --critical: #d03b3b;
+  --track:    #e8e7e1;
+
+  --shadow: 0 1px 2px rgba(11,11,11,.04), 0 8px 24px -12px rgba(11,11,11,.10);
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg:#16151a; --fg:#eceaf3; --muted:#a09caa; --line:#2e2c36;
-          --card:#1e1d24; --a:#5fd39b; --b:#a8d35f; --c:#e0c05a; --d:#e39a5a; --f:#f0776a; }
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane:    #0d0d0d;
+    --surface:  #1a1a19;
+    --ink:      #ffffff;
+    --ink-2:    #c3c2b7;
+    --ink-3:    #898781;
+    --hairline: #2c2c2a;
+    --rule:     #383835;
+    --ring:     rgba(255,255,255,.10);
+    --track:    #2c2c2a;
+    --shadow:   0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
 }
-* { box-sizing: border-box; }
-body { margin:0; padding:2rem 1.25rem 4rem; background:var(--bg); color:var(--fg);
-  font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
-main { max-width: 68rem; margin: 0 auto; }
-h1 { font-size:1.5rem; margin:0 0 .25rem; letter-spacing:-.01em; }
-h2 { font-size:1.15rem; margin:2.5rem 0 .75rem; padding-top:1.25rem; border-top:1px solid var(--line); }
-.sub { color:var(--muted); font-size:.9rem; margin:0 0 1.5rem; }
-.grade { display:flex; align-items:baseline; gap:.75rem; margin:1rem 0; }
-.letter { font-size:3.5rem; font-weight:700; line-height:1; letter-spacing:-.03em; }
-.letter.A{color:var(--a)}.letter.B{color:var(--b)}.letter.C{color:var(--c)}
-.letter.D{color:var(--d)}.letter.F{color:var(--f)}
-.score { font-size:1.1rem; color:var(--muted); }
-.cap { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--f);
-  padding:.75rem 1rem; border-radius:.4rem; margin:1rem 0; font-size:.92rem; }
-.wrap { overflow-x:auto; }
-table { border-collapse:collapse; width:100%; font-size:.9rem; margin:.5rem 0 1rem; }
-th,td { text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--line); vertical-align:top; }
-th { font-weight:600; color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
-td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
-.pill { display:inline-block; padding:.1rem .5rem; border-radius:99px; font-size:.75rem;
-  font-weight:600; border:1px solid var(--line); }
-.pill.FAIL{color:var(--f);border-color:var(--f)}
-.pill.partial{color:var(--c);border-color:var(--c)}
-.pill.pass{color:var(--a);border-color:var(--a)}
-.pill.high{color:var(--f);border-color:var(--f)}
-.pill.medium{color:var(--d);border-color:var(--d)}
-.pill.low{color:var(--muted)}
-.finding { background:var(--card); border:1px solid var(--line); border-radius:.5rem;
-  padding:.9rem 1.1rem; margin:.75rem 0; }
-.finding p { margin:.4rem 0; }
-code, .snippet { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:.82rem; }
-.snippet { display:block; color:var(--muted); overflow-x:auto; white-space:pre; padding:.25rem 0; }
-.empty { color:var(--muted); font-style:italic; }
-footer { margin-top:3rem; padding-top:1.25rem; border-top:1px solid var(--line);
-  color:var(--muted); font-size:.83rem; }
-ol.fixes { padding-left:1.25rem; } ol.fixes li { margin:.6rem 0; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7; --ink-3:#898781;
+  --hairline:#2c2c2a; --rule:#383835; --ring:rgba(255,255,255,.10); --track:#2c2c2a;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink);
+  font: 400 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "kern" 1;
+}
+.wrap { max-width: 60rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+
+/* ── masthead ─────────────────────────────────────────────────────── */
+.eyebrow {
+  font-size: .6875rem; font-weight: 600; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--ink-3); margin: 0 0 1.75rem;
+}
+.repo { font-size: 1.375rem; font-weight: 600; letter-spacing: -.021em; margin: 0; word-break: break-all; }
+.meta { color: var(--ink-2); font-size: .8125rem; margin: .5rem 0 0; }
+.meta code { font-size: .95em; color: var(--ink-2); }
+
+/* ── hero: exactly one per view ───────────────────────────────────── */
+.hero {
+  margin: 2.5rem 0 0; padding: 2rem 2rem 1.75rem;
+  background: var(--surface); border: 1px solid var(--ring);
+  border-radius: 10px; box-shadow: var(--shadow);
+}
+.hero-top { display: flex; align-items: flex-end; gap: 1.25rem; flex-wrap: wrap; }
+.figure {
+  font-size: 4.5rem; font-weight: 600; line-height: .88; letter-spacing: -.045em;
+  /* Proportional figures: tabular would make a large number look loose. */
+}
+.figure .of { font-size: 1.125rem; font-weight: 500; color: var(--ink-3); letter-spacing: -.01em; }
+.mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 2.25rem; height: 2.25rem; padding: 0 .5rem;
+  border: 1.5px solid currentColor; border-radius: 6px;
+  font-size: 1.0625rem; font-weight: 700; letter-spacing: .01em;
+  margin-bottom: .4rem;
+}
+.hero-label { margin-left: auto; text-align: right; color: var(--ink-2); font-size: .8125rem; }
+.hero-label strong { display: block; color: var(--ink); font-size: .9375rem; font-weight: 600; }
+
+/* Grade colours are the fixed status palette. The letter is always shown, so
+   colour never carries the meaning alone. */
+.g-A { color: var(--good); }
+.g-B { color: var(--good); }
+.g-C { color: var(--warning); }
+.g-D { color: var(--serious); }
+.g-F { color: var(--critical); }
+.g-NA { color: var(--ink-3); }
+
+.notice {
+  margin: 1.5rem 0 0; padding: .875rem 1rem .875rem 1.125rem;
+  border-left: 3px solid var(--critical); background: var(--plane);
+  border-radius: 0 6px 6px 0; font-size: .875rem; color: var(--ink-2);
+}
+.notice strong { color: var(--ink); }
+.notice.soft { border-left-color: var(--warning); }
+
+/* ── axis meters ──────────────────────────────────────────────────── */
+.axes { margin: 1.75rem 0 0; border-top: 1px solid var(--hairline); }
+.axis {
+  display: grid; grid-template-columns: 11rem 1fr 3rem 2rem;
+  align-items: center; gap: 1rem;
+  padding: .8125rem 0; border-bottom: 1px solid var(--hairline);
+}
+.axis-name { font-size: .9375rem; font-weight: 500; }
+.axis-name a { color: inherit; text-decoration: none; }
+.axis-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.meter { height: 6px; background: var(--track); border-radius: 999px; overflow: hidden; }
+.meter > i { display: block; height: 100%; border-radius: 999px; background: currentColor; }
+.axis-score { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: .9375rem; }
+.axis-letter { text-align: center; font-weight: 700; font-size: .8125rem; }
+.axis-fails { color: var(--ink-3); font-size: .75rem; }
+
+/* ── sections ─────────────────────────────────────────────────────── */
+h2 {
+  font-size: 1.0625rem; font-weight: 600; letter-spacing: -.015em;
+  margin: 3.5rem 0 .25rem; padding-top: 2rem; border-top: 1px solid var(--hairline);
+}
+h2:first-of-type { border-top: 0; }
+.section-note { color: var(--ink-2); font-size: .875rem; margin: 0 0 1.25rem; }
+h3 {
+  font-size: .9375rem; font-weight: 600; margin: 2rem 0 .75rem;
+  display: flex; align-items: baseline; gap: .625rem;
+}
+h3 .h3-score { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 500; font-size: .875rem; }
+
+/* ── fix queue ────────────────────────────────────────────────────── */
+ol.queue { list-style: none; counter-reset: q; margin: 0; padding: 0; }
+ol.queue > li {
+  counter-increment: q; position: relative;
+  padding: 1rem 0 1rem 2.75rem; border-bottom: 1px solid var(--hairline);
+}
+ol.queue > li::before {
+  content: counter(q); position: absolute; left: 0; top: 1rem;
+  width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  border: 1px solid var(--rule); color: var(--ink-3);
+  font-size: .75rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; justify-content: center;
+}
+.fix-head { display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap; }
+.fix-title { font-weight: 600; font-size: .9375rem; }
+.fix-meta { margin-left: auto; color: var(--ink-3); font-size: .75rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+ol.queue ul { margin: .5rem 0 0; padding-left: 1.1rem; color: var(--ink-2); font-size: .875rem; }
+ol.queue ul li { margin: .1875rem 0; }
+
+/* ── checks table ─────────────────────────────────────────────────── */
+.scroll { overflow-x: auto; margin: 0 -1.5rem; padding: 0 1.5rem; }
+table { border-collapse: collapse; width: 100%; font-size: .8125rem; }
+thead th {
+  text-align: left; font-weight: 600; font-size: .6875rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3);
+  padding: 0 .75rem .5rem 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+}
+tbody td { padding: .5625rem .75rem .5625rem 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+td.id { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .75rem; color: var(--ink-2); white-space: nowrap; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+td.detail { color: var(--ink-2); }
+
+/* Status word + dot: never colour alone. */
+.status { display: inline-flex; align-items: center; gap: .4375rem; white-space: nowrap; font-weight: 500; }
+.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.s-pass { color: var(--good); }
+.s-partial { color: var(--warning); }
+.s-fail { color: var(--critical); }
+.s-na { color: var(--ink-3); }
+.s-na::before { background: none; box-shadow: inset 0 0 0 1px currentColor; }
+
+/* ── findings ─────────────────────────────────────────────────────── */
+.finding {
+  padding: 1.125rem 0 1.125rem 1rem; margin: 0;
+  border-left: 2px solid var(--rule); border-bottom: 1px solid var(--hairline);
+}
+.finding.sev-high { border-left-color: var(--critical); }
+.finding.sev-medium { border-left-color: var(--serious); }
+.finding.sev-low { border-left-color: var(--rule); }
+.finding-head { display: flex; align-items: baseline; gap: .625rem; flex-wrap: wrap; }
+.sev {
+  font-size: .625rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+}
+.finding-title { font-weight: 600; font-size: .9375rem; }
+.finding-check { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .6875rem; color: var(--ink-3); }
+.finding p { margin: .5rem 0 0; color: var(--ink-2); font-size: .875rem; max-width: 62ch; }
+.evidence { margin: .75rem 0 0; border: 1px solid var(--hairline); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.evidence + .evidence { margin-top: .375rem; }
+.ev-path {
+  padding: .375rem .625rem; background: var(--plane); border-bottom: 1px solid var(--hairline);
+  font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .6875rem; color: var(--ink-2);
+}
+.ev-code { padding: .5rem .625rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .75rem; color: var(--ink); overflow-x: auto; white-space: pre; }
+.empty { color: var(--ink-3); font-size: .875rem; font-style: italic; margin: 1rem 0 0; }
+
+footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--hairline); color: var(--ink-3); font-size: .75rem; line-height: 1.7; }
+footer a { color: var(--ink-2); }
+@media (max-width: 34rem) {
+  .axis { grid-template-columns: 1fr 3rem 2rem; }
+  .axis .meter { display: none; }
+  .figure { font-size: 3.5rem; }
+}
 </style>
 </head>
 <body>
-<main>
-  <h1>Agent Trust Score</h1>
-  <p class="sub">https://github.com/example/demo · commit <code>a1b2c3d4e5f6</code> on <code>master</code></p>
+<div class="wrap">
 
-  <div class="grade">
-    <span class="letter C">C</span>
-    <span class="score">70/100</span>
-  </div>
-<div class="cap"><strong>Capped.</strong> Blast Radius scored 7, below 40; overall is capped at 70.</div><div class="cap"><strong>Truncated.</strong> This audit analyzed 118 of 412 tracked files and did not see the whole repository.</div>
-  <div class="wrap">
-  <table>
-    <thead><tr><th>Axis</th><th class="num">Score</th><th>Grade</th><th class="num">Failed</th></tr></thead>
-    <tbody>
-      <tr><td>Tool Surface</td><td class="num">86</td>
-          <td><span class="pill">B</span></td><td class="num">0</td></tr>
-      <tr><td>Blast Radius</td><td class="num">7</td>
-          <td><span class="pill">F</span></td><td class="num">3</td></tr>
-      <tr><td>Verifiability</td><td class="num">100</td>
-          <td><span class="pill">A</span></td><td class="num">0</td></tr>
-      <tr><td>Context Quality</td><td class="num">92</td>
-          <td><span class="pill">A</span></td><td class="num">0</td></tr>
-      <tr><td>Observability</td><td class="num">N/A</td>
-          <td><span class="pill">N/A</span></td><td class="num">0</td></tr>
-    </tbody>
-  </table>
-  </div>
+  <p class="eyebrow">Agent Trust Score</p>
+  <h1 class="repo">https://github.com/example/demo</h1>
+  <p class="meta">
+    <code>a1b2c3d4e5f6</code> on <code>master</code> ·
+    118 of 412 tracked files analysed ·
+Python, TypeScript, Markdown  </p>
+
+  <section class="hero">
+    <div class="hero-top">
+      <div class="figure g-C">70<span class="of">/100</span></div>
+      <div class="mark g-C">C</div>
+      <div class="hero-label">
+        <strong>1 of 5 axes with failures</strong>
+        6 ranked fixes
+      </div>
+    </div>
+
+    <p class="notice"><strong>Grade capped.</strong> Blast Radius scored 7, below 40; overall is capped at 70.</p>
+    <p class="notice soft"><strong>Truncated.</strong> 118 of 412 tracked files were analysed; this audit did not see the whole repository.</p>
+
+    <div class="axes">
+      <div class="axis">
+        <div class="axis-name"><a href="#tool_surface">Tool Surface</a></div>
+        <div class="meter g-B"><i style="width: 86%"></i></div>
+        <div class="axis-score">86</div>
+        <div class="axis-letter g-B">B</div>
+      </div>
+      <div class="axis">
+        <div class="axis-name"><a href="#blast_radius">Blast Radius</a></div>
+        <div class="meter g-F"><i style="width: 7%"></i></div>
+        <div class="axis-score">7</div>
+        <div class="axis-letter g-F">F</div>
+      </div>
+      <div class="axis">
+        <div class="axis-name"><a href="#verifiability">Verifiability</a></div>
+        <div class="meter g-A"><i style="width: 100%"></i></div>
+        <div class="axis-score">100</div>
+        <div class="axis-letter g-A">A</div>
+      </div>
+      <div class="axis">
+        <div class="axis-name"><a href="#context_quality">Context Quality</a></div>
+        <div class="meter g-A"><i style="width: 92%"></i></div>
+        <div class="axis-score">92</div>
+        <div class="axis-letter g-A">A</div>
+      </div>
+      <div class="axis">
+        <div class="axis-name"><a href="#observability">Observability</a></div>
+        <div class="meter g-NA"><i style="width: 0%"></i></div>
+        <div class="axis-score">N/A</div>
+        <div class="axis-letter g-NA">N/A</div>
+      </div>
+    </div>
+  </section>
 
   <h2>Fix these first</h2>
-  <ol class="fixes">
-    <li><strong>.env not tracked</strong> — 15m, recovers 12 points on blast_radius
+  <p class="section-note">Ranked by points recovered per hour of effort.</p>
+  <ol class="queue">
+    <li>
+      <div class="fix-head">
+        <span class="fix-title">.env not tracked</span>
+        <span class="fix-meta">15m · +12 on blast radius</span>
+      </div>
       <ul><li>Untrack the .env file with `git rm --cached`.</li><li>Add it to .gitignore and rotate anything it contained.</li></ul>
     </li>
-    <li><strong>No committed secrets</strong> — 45m, recovers 30 points on blast_radius
+    <li>
+      <div class="fix-head">
+        <span class="fix-title">No committed secrets</span>
+        <span class="fix-meta">45m · +30 on blast radius</span>
+      </div>
       <ul><li>Rotate the exposed credential now -- it is in every clone and in history.</li><li>Remove it from the working tree and move the value to an environment variable.</li><li>Purge it from history, or treat the repository as compromised.</li></ul>
     </li>
-    <li><strong>Ownership config</strong> — 10m, recovers 5 points on blast_radius
+    <li>
+      <div class="fix-head">
+        <span class="fix-title">Ownership config</span>
+        <span class="fix-meta">10m · +5 on blast radius</span>
+      </div>
       <ul><li>Add a CODEOWNERS file so changes need a named reviewer.</li></ul>
     </li>
-    <li><strong>gitignore covers sensitive paths</strong> — 10m, recovers 4 points on blast_radius
+    <li>
+      <div class="fix-head">
+        <span class="fix-title">gitignore covers sensitive paths</span>
+        <span class="fix-meta">10m · +4 on blast radius</span>
+      </div>
       <ul><li>Add .env, key and credential patterns, and build output to .gitignore.</li></ul>
     </li>
-    <li><strong>Docs resolve to reality</strong> — 20m, recovers 3 points on context_quality
+    <li>
+      <div class="fix-head">
+        <span class="fix-title">Docs resolve to reality</span>
+        <span class="fix-meta">20m · +3 on context quality</span>
+      </div>
       <ul><li>Update the paths cited in the agent doc so they resolve.</li></ul>
     </li>
-    <li><strong>Typed public boundaries</strong> — 4h, recovers 8 points on tool_surface
+    <li>
+      <div class="fix-head">
+        <span class="fix-title">Typed public boundaries</span>
+        <span class="fix-meta">4h · +8 on tool surface</span>
+      </div>
       <ul><li>Enable strict type checking and annotate the public functions first.</li></ul>
     </li>
   </ol>
 
-  <h2>Tool Surface — 86 (B)</h2>
-  <div class="wrap">
+  <h2 id="tool_surface">Tool Surface<span class="h3-score">86/100 · B</span></h2>
+
+  <div class="scroll">
   <table>
     <thead><tr><th>Check</th><th>Status</th><th class="num">Weight</th><th>Detail</th></tr></thead>
     <tbody>
-      <tr><td><code>TS-01</code> MCP server declared</td>
-          <td><span class="pill pass">pass</span></td>
-          <td class="num">20</td><td></td></tr>
-      <tr><td><code>TS-02</code> Machine-readable API schema</td>
-          <td><span class="pill pass">pass</span></td>
-          <td class="num">20</td><td></td></tr>
-      <tr><td><code>TS-05</code> Typed public boundaries</td>
-          <td><span class="pill partial">partial</span></td>
-          <td class="num">15</td><td>42% annotated</td></tr>
-      <tr><td><code>TS-06</code> Parseable package manifest</td>
-          <td><span class="pill n/a">n/a</span></td>
-          <td class="num">10</td><td>no manifest</td></tr>
+      <tr>
+        <td class="id">TS-01</td>
+        <td><span class="status s-pass">pass</span></td>
+        <td class="num">20</td>
+        <td class="detail">MCP server declared</td>
+      </tr>
+      <tr>
+        <td class="id">TS-02</td>
+        <td><span class="status s-pass">pass</span></td>
+        <td class="num">20</td>
+        <td class="detail">Machine-readable API schema</td>
+      </tr>
+      <tr>
+        <td class="id">TS-05</td>
+        <td><span class="status s-partial">partial</span></td>
+        <td class="num">15</td>
+        <td class="detail">Typed public boundaries — 42% annotated</td>
+      </tr>
+      <tr>
+        <td class="id">TS-06</td>
+        <td><span class="status s-na">n/a</span></td>
+        <td class="num">10</td>
+        <td class="detail">Parseable package manifest — no manifest</td>
+      </tr>
     </tbody>
   </table>
   </div>
-    <div class="finding">
-      <p><code>TS-05</code> <span class="pill low">low</span>
-         <strong>Typed public boundaries</strong></p>
+
+    <div class="finding sev-low">
+      <div class="finding-head">
+        <span class="sev g-NA">low</span>
+        <span class="finding-title">Typed public boundaries</span>
+        <span class="finding-check">TS-05</span>
+      </div>
       <p>Partially satisfied. Untyped public boundaries give an agent nothing to check its calls against before running them.</p>
     </div>
-  <h2>Blast Radius — 7 (F)</h2>
-  <div class="wrap">
+  <h2 id="blast_radius">Blast Radius<span class="h3-score">7/100 · F</span></h2>
+
+  <div class="scroll">
   <table>
     <thead><tr><th>Check</th><th>Status</th><th class="num">Weight</th><th>Detail</th></tr></thead>
     <tbody>
-      <tr><td><code>BR-01</code> No committed secrets</td>
-          <td><span class="pill FAIL">FAIL</span></td>
-          <td class="num">30</td><td>1 match, 3 placeholders suppressed</td></tr>
-      <tr><td><code>BR-02</code> .env not tracked</td>
-          <td><span class="pill FAIL">FAIL</span></td>
-          <td class="num">12</td><td></td></tr>
-      <tr><td><code>BR-03</code> gitignore covers sensitive paths</td>
-          <td><span class="pill partial">partial</span></td>
-          <td class="num">8</td><td></td></tr>
-      <tr><td><code>BR-07</code> Ownership config</td>
-          <td><span class="pill FAIL">FAIL</span></td>
-          <td class="num">5</td><td></td></tr>
+      <tr>
+        <td class="id">BR-01</td>
+        <td><span class="status s-fail">FAIL</span></td>
+        <td class="num">30</td>
+        <td class="detail">No committed secrets — 1 match, 3 placeholders suppressed</td>
+      </tr>
+      <tr>
+        <td class="id">BR-02</td>
+        <td><span class="status s-fail">FAIL</span></td>
+        <td class="num">12</td>
+        <td class="detail">.env not tracked</td>
+      </tr>
+      <tr>
+        <td class="id">BR-03</td>
+        <td><span class="status s-partial">partial</span></td>
+        <td class="num">8</td>
+        <td class="detail">gitignore covers sensitive paths</td>
+      </tr>
+      <tr>
+        <td class="id">BR-07</td>
+        <td><span class="status s-fail">FAIL</span></td>
+        <td class="num">5</td>
+        <td class="detail">Ownership config</td>
+      </tr>
     </tbody>
   </table>
   </div>
-    <div class="finding">
-      <p><code>BR-01</code> <span class="pill high">high</span>
-         <strong>No committed secrets</strong></p>
+
+    <div class="finding sev-high">
+      <div class="finding-head">
+        <span class="sev g-F">high</span>
+        <span class="finding-title">No committed secrets</span>
+        <span class="finding-check">BR-01</span>
+      </div>
       <p>A committed secret is live credential material in every clone, and an agent with repository access can read and transmit it.</p>
-        <code>config/settings.py:12</code>
-<span class="snippet">AWS_KEY = &#34;AKIA…LE&#34;</span>    </div>
-    <div class="finding">
-      <p><code>BR-02</code> <span class="pill medium">medium</span>
-         <strong>.env not tracked</strong></p>
+      <div class="evidence">
+        <div class="ev-path">config/settings.py:12</div>
+<div class="ev-code">AWS_KEY = &#34;AKIA…LE&#34;</div>      </div>
+    </div>
+    <div class="finding sev-medium">
+      <div class="finding-head">
+        <span class="sev g-D">medium</span>
+        <span class="finding-title">.env not tracked</span>
+        <span class="finding-check">BR-02</span>
+      </div>
       <p>A tracked .env file puts real environment values in history where they outlive any later deletion.</p>
     </div>
-    <div class="finding">
-      <p><code>BR-03</code> <span class="pill low">low</span>
-         <strong>gitignore covers sensitive paths</strong></p>
+    <div class="finding sev-low">
+      <div class="finding-head">
+        <span class="sev g-NA">low</span>
+        <span class="finding-title">gitignore covers sensitive paths</span>
+        <span class="finding-check">BR-03</span>
+      </div>
       <p>Partially satisfied. Without .gitignore coverage the next careless `git add -A` commits credentials.</p>
     </div>
-    <div class="finding">
-      <p><code>BR-07</code> <span class="pill low">low</span>
-         <strong>Ownership config</strong></p>
+    <div class="finding sev-low">
+      <div class="finding-head">
+        <span class="sev g-NA">low</span>
+        <span class="finding-title">Ownership config</span>
+        <span class="finding-check">BR-07</span>
+      </div>
       <p>With no ownership or protection config, nothing forces review of a change an agent proposes.</p>
     </div>
-  <h2>Verifiability — 100 (A)</h2>
-  <div class="wrap">
+  <h2 id="verifiability">Verifiability<span class="h3-score">100/100 · A</span></h2>
+
+  <div class="scroll">
   <table>
     <thead><tr><th>Check</th><th>Status</th><th class="num">Weight</th><th>Detail</th></tr></thead>
     <tbody>
-      <tr><td><code>VF-01</code> Test suite exists</td>
-          <td><span class="pill pass">pass</span></td>
-          <td class="num">20</td><td></td></tr>
-      <tr><td><code>VF-05</code> CI actually runs tests</td>
-          <td><span class="pill pass">pass</span></td>
-          <td class="num">15</td><td></td></tr>
+      <tr>
+        <td class="id">VF-01</td>
+        <td><span class="status s-pass">pass</span></td>
+        <td class="num">20</td>
+        <td class="detail">Test suite exists</td>
+      </tr>
+      <tr>
+        <td class="id">VF-05</td>
+        <td><span class="status s-pass">pass</span></td>
+        <td class="num">15</td>
+        <td class="detail">CI actually runs tests</td>
+      </tr>
     </tbody>
   </table>
   </div>
-<p class="empty">No findings on this axis.</p>  <h2>Context Quality — 92 (A)</h2>
-  <div class="wrap">
+
+  <p class="empty">No findings on this axis.</p>
+  <h2 id="context_quality">Context Quality<span class="h3-score">92/100 · A</span></h2>
+
+  <div class="scroll">
   <table>
     <thead><tr><th>Check</th><th>Status</th><th class="num">Weight</th><th>Detail</th></tr></thead>
     <tbody>
-      <tr><td><code>CQ-02</code> README with substance</td>
-          <td><span class="pill pass">pass</span></td>
-          <td class="num">10</td><td>README begins: &lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;</td></tr>
-      <tr><td><code>CQ-05</code> Run and test commands</td>
-          <td><span class="pill pass">pass</span></td>
-          <td class="num">15</td><td></td></tr>
-      <tr><td><code>CQ-08</code> Docs resolve to reality</td>
-          <td><span class="pill partial">partial</span></td>
-          <td class="num">5</td><td>3 of 5 paths resolve</td></tr>
+      <tr>
+        <td class="id">CQ-02</td>
+        <td><span class="status s-pass">pass</span></td>
+        <td class="num">10</td>
+        <td class="detail">README with substance — README begins: &lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;</td>
+      </tr>
+      <tr>
+        <td class="id">CQ-05</td>
+        <td><span class="status s-pass">pass</span></td>
+        <td class="num">15</td>
+        <td class="detail">Run and test commands</td>
+      </tr>
+      <tr>
+        <td class="id">CQ-08</td>
+        <td><span class="status s-partial">partial</span></td>
+        <td class="num">5</td>
+        <td class="detail">Docs resolve to reality — 3 of 5 paths resolve</td>
+      </tr>
     </tbody>
   </table>
   </div>
-    <div class="finding">
-      <p><code>CQ-08</code> <span class="pill low">low</span>
-         <strong>Docs resolve to reality</strong></p>
+
+    <div class="finding sev-low">
+      <div class="finding-head">
+        <span class="sev g-NA">low</span>
+        <span class="finding-title">Docs resolve to reality</span>
+        <span class="finding-check">CQ-08</span>
+      </div>
       <p>Partially satisfied. Documentation pointing at files that no longer exist is worse than none, because the agent trusts it.</p>
     </div>
-  <h2>Observability — N/A (N/A)</h2>
-  <div class="wrap">
+  <h2 id="observability">Observability<span class="h3-score">N/A/100 · N/A</span></h2>
+
+  <div class="scroll">
   <table>
     <thead><tr><th>Check</th><th>Status</th><th class="num">Weight</th><th>Detail</th></tr></thead>
     <tbody>
-      <tr><td><code>OB-01</code> Structured logging</td>
-          <td><span class="pill n/a">n/a</span></td>
-          <td class="num">25</td><td>no source files</td></tr>
+      <tr>
+        <td class="id">OB-01</td>
+        <td><span class="status s-na">n/a</span></td>
+        <td class="num">25</td>
+        <td class="detail">Structured logging — no source files</td>
+      </tr>
     </tbody>
   </table>
   </div>
-<p class="empty">No findings on this axis.</p>
+
+  <p class="empty">No findings on this axis.</p>
+
   <footer>
     Generated 2026-01-15 09:30 UTC · schema 1.0 ·
-template explanations (no ANTHROPIC_API_KEY configured)    <br>This report grades repository structure. It is not a security audit, and a passing grade certifies nothing.
+written-in explanations (no ANTHROPIC_API_KEY configured)<br>
+    This report grades repository structure. It is not a security audit, and a passing grade certifies nothing.
   </footer>
-</main>
+
+</div>
 </body>
 </html>

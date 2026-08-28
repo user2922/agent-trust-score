@@ -26,28 +26,74 @@ from build_fixtures import build_clean, build_ugly  # noqa: E402
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 INDEX_CSS = """
-:root { --bg:#fbfaf8; --fg:#1c1b19; --muted:#6b6862; --line:#e2ddd5; --card:#fff;
-        --a:#1f7a4d; --b:#4f7a1f; --c:#9a7a12; --d:#a85a12; --f:#a8261a; }
+:root {
+  color-scheme: light;
+  --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+  --hairline:#e1e0d9; --rule:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --track:#e8e7e1;
+  --shadow: 0 1px 2px rgba(11,11,11,.04), 0 8px 24px -12px rgba(11,11,11,.10);
+}
 @media (prefers-color-scheme: dark) {
-  :root { --bg:#16151a; --fg:#eceaf3; --muted:#a09caa; --line:#2e2c36; --card:#1e1d24;
-          --a:#5fd39b; --b:#a8d35f; --c:#e0c05a; --d:#e39a5a; --f:#f0776a; } }
-* { box-sizing:border-box; }
-body { margin:0; padding:3rem 1.25rem 5rem; background:var(--bg); color:var(--fg);
-  font:16px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
-main { max-width:52rem; margin:0 auto; }
-h1 { font-size:1.75rem; margin:0 0 .5rem; letter-spacing:-.02em; }
-.lede { color:var(--muted); margin:0 0 2.5rem; font-size:1.05rem; }
-a.card { display:block; text-decoration:none; color:inherit; background:var(--card);
-  border:1px solid var(--line); border-radius:.6rem; padding:1.1rem 1.3rem; margin:.75rem 0; }
-a.card:hover { border-color:var(--muted); }
-.row { display:flex; align-items:baseline; gap:.9rem; }
-.grade { font-size:2rem; font-weight:700; line-height:1; letter-spacing:-.03em; }
-.A{color:var(--a)}.B{color:var(--b)}.C{color:var(--c)}.D{color:var(--d)}.F{color:var(--f)}
-.name { font-weight:600; }
-.note { color:var(--muted); font-size:.9rem; margin:.4rem 0 0; }
-code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.85em; }
-footer { margin-top:3rem; padding-top:1.25rem; border-top:1px solid var(--line);
-  color:var(--muted); font-size:.85rem; }
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7; --ink-3:#898781;
+    --hairline:#2c2c2a; --rule:#383835; --ring:rgba(255,255,255,.10); --track:#2c2c2a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+*, *::before, *::after { box-sizing:border-box; }
+body {
+  margin:0; background:var(--plane); color:var(--ink);
+  font:400 15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+.wrap { max-width:52rem; margin:0 auto; padding:5rem 1.5rem 6rem; }
+.eyebrow {
+  font-size:.6875rem; font-weight:600; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--ink-3); margin:0 0 1.25rem;
+}
+h1 { font-size:2.25rem; font-weight:600; letter-spacing:-.032em;
+     margin:0 0 1rem; line-height:1.12; }
+.lede { color:var(--ink-2); font-size:1.0625rem; margin:0 0 1rem; max-width:44ch; }
+.run {
+  display:inline-block; margin:0 0 3.5rem; padding:.5rem .75rem;
+  background:var(--surface); border:1px solid var(--ring); border-radius:6px;
+  font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.8125rem; color:var(--ink-2);
+}
+.run b { color:var(--ink); font-weight:600; }
+
+.section-label {
+  font-size:.6875rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); margin:0 0 .75rem; padding-bottom:.625rem;
+  border-bottom:1px solid var(--rule);
+}
+a.card {
+  display:block; text-decoration:none; color:inherit;
+  padding:1.5rem 0; border-bottom:1px solid var(--hairline);
+}
+a.card:hover .name { text-decoration:underline; text-underline-offset:3px; }
+.row { display:flex; align-items:center; gap:1.25rem; }
+.grade {
+  font-size:2.5rem; font-weight:600; line-height:1; letter-spacing:-.04em;
+  min-width:2.75rem;
+}
+.score { font-variant-numeric:tabular-nums; color:var(--ink-3);
+         font-size:.875rem; margin-top:.3rem; }
+.body { flex:1; min-width:0; }
+.name { font-size:1.0625rem; font-weight:600; letter-spacing:-.015em; }
+.note { color:var(--ink-2); font-size:.875rem; margin:.3rem 0 0; max-width:52ch; }
+.axes { display:flex; gap:.375rem; margin-top:.75rem; }
+.axes i { display:block; height:4px; flex:1; border-radius:999px;
+          background:var(--track); overflow:hidden; }
+.axes i > s { display:block; height:100%; background:currentColor; border-radius:999px; }
+.A{color:var(--good)} .B{color:var(--good)} .C{color:var(--warning)}
+.D{color:var(--serious)} .F{color:var(--critical)} .NA{color:var(--ink-3)}
+footer {
+  margin-top:3.5rem; padding-top:1.5rem; border-top:1px solid var(--hairline);
+  color:var(--ink-3); font-size:.8125rem; line-height:1.7;
+}
+footer a { color:var(--ink-2); }
+@media (max-width:34rem) { h1 { font-size:1.75rem; } .grade { font-size:2rem; } }
 """
 
 
@@ -55,35 +101,48 @@ def index(entries: list[tuple[str, str, Report, str]]) -> str:
     """The landing page linking every generated report."""
     cards = []
     for slug, title, report, note in entries:
-        letter = report.overall.letter.value
+        letter = report.overall.letter.value.replace("/", "")
         score = "N/A" if report.overall.score is None else str(report.overall.score)
+        bars = "".join(
+            f'<i class="{axis.letter.value.replace("/", "")}">'
+            f'<s style="width:{axis.score or 0}%"></s></i>'
+            for axis in report.axes
+        )
         cards.append(
             f'<a class="card" href="{slug}.html">'
-            f'<div class="row"><span class="grade {letter}">{letter}</span>'
-            f'<span class="name">{escape(title)}</span>'
-            f'<span class="note">{score}/100</span></div>'
-            f'<p class="note">{escape(note)}</p></a>'
+            f'<div class="row">'
+            f'<div><div class="grade {letter}">{letter}</div>'
+            f'<div class="score">{score}/100</div></div>'
+            f'<div class="body">'
+            f'<div class="name">{escape(title)}</div>'
+            f'<p class="note">{escape(note)}</p>'
+            f'<div class="axes">{bars}</div>'
+            f"</div></div></a>"
         )
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agent Trust Score — reports</title>
+<title>Agent Trust Score</title>
 <style>{INDEX_CSS}</style></head>
-<body><main>
-<h1>Agent Trust Score</h1>
-<p class="lede">How safely can an autonomous coding agent operate inside this
-repository? Five axes, 37 checks, evidence with file and line, and a fix list
-ranked by points recovered per hour. These are real reports, generated by the
-tool.</p>
+<body><div class="wrap">
+<p class="eyebrow">Agent Trust Score</p>
+<h1>How safely can an agent work in this repository?</h1>
+<p class="lede">Five axes, 37 checks, evidence with file and line, and a fix list
+ranked by points recovered per hour. Static analysis only &mdash; it reads
+repositories, it never runs them.</p>
+<p class="run"><b>uvx agent-trust-score</b> &lt;repo&gt;</p>
+
+<p class="section-label">Reports</p>
 {"".join(cards)}
+
 <footer>
-Run it yourself: <code>uvx agent-trust-score &lt;repo&gt;</code> ·
-<a href="https://github.com/user2922/agent-trust-score">source on GitHub</a><br>
-This grades repository structure. It is not a security audit and it certifies
-nothing.
+Each bar is one axis, in order: tool surface, blast radius, verifiability,
+context quality, observability.<br>
+<a href="https://github.com/user2922/agent-trust-score">Source on GitHub</a> &middot;
+This grades repository structure. It is not a security audit and it certifies nothing.
 </footer>
-</main></body></html>
+</div></body></html>
 """
 
 

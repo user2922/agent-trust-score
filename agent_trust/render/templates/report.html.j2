@@ -3,124 +3,320 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agent Trust Score — {{ repo.source }}</title>
+<title>{{ repo.source }} — Agent Trust Score</title>
 <style>
+/* Tokens. Light values on bare :root; dark redefined under both the OS media
+   query and an explicit stamp, so a viewer toggle wins either way. Surfaces and
+   status steps are the validated reference palette. */
 :root {
-  --bg: #fbfaf8; --fg: #1c1b19; --muted: #6b6862; --line: #e2ddd5;
-  --card: #ffffff; --accent: #7a5cff;
-  --a: #1f7a4d; --b: #4f7a1f; --c: #9a7a12; --d: #a85a12; --f: #a8261a;
+  color-scheme: light;
+  --plane:      #f9f9f7;
+  --surface:    #fcfcfb;
+  --ink:        #0b0b0b;
+  --ink-2:      #52514e;
+  --ink-3:      #898781;
+  --hairline:   #e1e0d9;
+  --rule:       #c3c2b7;
+  --ring:       rgba(11,11,11,.10);
+
+  --good:     #0ca30c;
+  --warning:  #fab219;
+  --serious:  #ec835a;
+  --critical: #d03b3b;
+  --track:    #e8e7e1;
+
+  --shadow: 0 1px 2px rgba(11,11,11,.04), 0 8px 24px -12px rgba(11,11,11,.10);
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg:#16151a; --fg:#eceaf3; --muted:#a09caa; --line:#2e2c36;
-          --card:#1e1d24; --a:#5fd39b; --b:#a8d35f; --c:#e0c05a; --d:#e39a5a; --f:#f0776a; }
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --plane:    #0d0d0d;
+    --surface:  #1a1a19;
+    --ink:      #ffffff;
+    --ink-2:    #c3c2b7;
+    --ink-3:    #898781;
+    --hairline: #2c2c2a;
+    --rule:     #383835;
+    --ring:     rgba(255,255,255,.10);
+    --track:    #2c2c2a;
+    --shadow:   0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
 }
-* { box-sizing: border-box; }
-body { margin:0; padding:2rem 1.25rem 4rem; background:var(--bg); color:var(--fg);
-  font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
-main { max-width: 68rem; margin: 0 auto; }
-h1 { font-size:1.5rem; margin:0 0 .25rem; letter-spacing:-.01em; }
-h2 { font-size:1.15rem; margin:2.5rem 0 .75rem; padding-top:1.25rem; border-top:1px solid var(--line); }
-.sub { color:var(--muted); font-size:.9rem; margin:0 0 1.5rem; }
-.grade { display:flex; align-items:baseline; gap:.75rem; margin:1rem 0; }
-.letter { font-size:3.5rem; font-weight:700; line-height:1; letter-spacing:-.03em; }
-.letter.A{color:var(--a)}.letter.B{color:var(--b)}.letter.C{color:var(--c)}
-.letter.D{color:var(--d)}.letter.F{color:var(--f)}
-.score { font-size:1.1rem; color:var(--muted); }
-.cap { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--f);
-  padding:.75rem 1rem; border-radius:.4rem; margin:1rem 0; font-size:.92rem; }
-.wrap { overflow-x:auto; }
-table { border-collapse:collapse; width:100%; font-size:.9rem; margin:.5rem 0 1rem; }
-th,td { text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--line); vertical-align:top; }
-th { font-weight:600; color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
-td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
-.pill { display:inline-block; padding:.1rem .5rem; border-radius:99px; font-size:.75rem;
-  font-weight:600; border:1px solid var(--line); }
-.pill.FAIL{color:var(--f);border-color:var(--f)}
-.pill.partial{color:var(--c);border-color:var(--c)}
-.pill.pass{color:var(--a);border-color:var(--a)}
-.pill.high{color:var(--f);border-color:var(--f)}
-.pill.medium{color:var(--d);border-color:var(--d)}
-.pill.low{color:var(--muted)}
-.finding { background:var(--card); border:1px solid var(--line); border-radius:.5rem;
-  padding:.9rem 1.1rem; margin:.75rem 0; }
-.finding p { margin:.4rem 0; }
-code, .snippet { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:.82rem; }
-.snippet { display:block; color:var(--muted); overflow-x:auto; white-space:pre; padding:.25rem 0; }
-.empty { color:var(--muted); font-style:italic; }
-footer { margin-top:3rem; padding-top:1.25rem; border-top:1px solid var(--line);
-  color:var(--muted); font-size:.83rem; }
-ol.fixes { padding-left:1.25rem; } ol.fixes li { margin:.6rem 0; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7; --ink-3:#898781;
+  --hairline:#2c2c2a; --rule:#383835; --ring:rgba(255,255,255,.10); --track:#2c2c2a;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink);
+  font: 400 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "kern" 1;
+}
+.wrap { max-width: 60rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+
+/* ── masthead ─────────────────────────────────────────────────────── */
+.eyebrow {
+  font-size: .6875rem; font-weight: 600; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--ink-3); margin: 0 0 1.75rem;
+}
+.repo { font-size: 1.375rem; font-weight: 600; letter-spacing: -.021em; margin: 0; word-break: break-all; }
+.meta { color: var(--ink-2); font-size: .8125rem; margin: .5rem 0 0; }
+.meta code { font-size: .95em; color: var(--ink-2); }
+
+/* ── hero: exactly one per view ───────────────────────────────────── */
+.hero {
+  margin: 2.5rem 0 0; padding: 2rem 2rem 1.75rem;
+  background: var(--surface); border: 1px solid var(--ring);
+  border-radius: 10px; box-shadow: var(--shadow);
+}
+.hero-top { display: flex; align-items: flex-end; gap: 1.25rem; flex-wrap: wrap; }
+.figure {
+  font-size: 4.5rem; font-weight: 600; line-height: .88; letter-spacing: -.045em;
+  /* Proportional figures: tabular would make a large number look loose. */
+}
+.figure .of { font-size: 1.125rem; font-weight: 500; color: var(--ink-3); letter-spacing: -.01em; }
+.mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 2.25rem; height: 2.25rem; padding: 0 .5rem;
+  border: 1.5px solid currentColor; border-radius: 6px;
+  font-size: 1.0625rem; font-weight: 700; letter-spacing: .01em;
+  margin-bottom: .4rem;
+}
+.hero-label { margin-left: auto; text-align: right; color: var(--ink-2); font-size: .8125rem; }
+.hero-label strong { display: block; color: var(--ink); font-size: .9375rem; font-weight: 600; }
+
+/* Grade colours are the fixed status palette. The letter is always shown, so
+   colour never carries the meaning alone. */
+.g-A { color: var(--good); }
+.g-B { color: var(--good); }
+.g-C { color: var(--warning); }
+.g-D { color: var(--serious); }
+.g-F { color: var(--critical); }
+.g-NA { color: var(--ink-3); }
+
+.notice {
+  margin: 1.5rem 0 0; padding: .875rem 1rem .875rem 1.125rem;
+  border-left: 3px solid var(--critical); background: var(--plane);
+  border-radius: 0 6px 6px 0; font-size: .875rem; color: var(--ink-2);
+}
+.notice strong { color: var(--ink); }
+.notice.soft { border-left-color: var(--warning); }
+
+/* ── axis meters ──────────────────────────────────────────────────── */
+.axes { margin: 1.75rem 0 0; border-top: 1px solid var(--hairline); }
+.axis {
+  display: grid; grid-template-columns: 11rem 1fr 3rem 2rem;
+  align-items: center; gap: 1rem;
+  padding: .8125rem 0; border-bottom: 1px solid var(--hairline);
+}
+.axis-name { font-size: .9375rem; font-weight: 500; }
+.axis-name a { color: inherit; text-decoration: none; }
+.axis-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.meter { height: 6px; background: var(--track); border-radius: 999px; overflow: hidden; }
+.meter > i { display: block; height: 100%; border-radius: 999px; background: currentColor; }
+.axis-score { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: .9375rem; }
+.axis-letter { text-align: center; font-weight: 700; font-size: .8125rem; }
+.axis-fails { color: var(--ink-3); font-size: .75rem; }
+
+/* ── sections ─────────────────────────────────────────────────────── */
+h2 {
+  font-size: 1.0625rem; font-weight: 600; letter-spacing: -.015em;
+  margin: 3.5rem 0 .25rem; padding-top: 2rem; border-top: 1px solid var(--hairline);
+}
+h2:first-of-type { border-top: 0; }
+.section-note { color: var(--ink-2); font-size: .875rem; margin: 0 0 1.25rem; }
+h3 {
+  font-size: .9375rem; font-weight: 600; margin: 2rem 0 .75rem;
+  display: flex; align-items: baseline; gap: .625rem;
+}
+h3 .h3-score { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 500; font-size: .875rem; }
+
+/* ── fix queue ────────────────────────────────────────────────────── */
+ol.queue { list-style: none; counter-reset: q; margin: 0; padding: 0; }
+ol.queue > li {
+  counter-increment: q; position: relative;
+  padding: 1rem 0 1rem 2.75rem; border-bottom: 1px solid var(--hairline);
+}
+ol.queue > li::before {
+  content: counter(q); position: absolute; left: 0; top: 1rem;
+  width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  border: 1px solid var(--rule); color: var(--ink-3);
+  font-size: .75rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; justify-content: center;
+}
+.fix-head { display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap; }
+.fix-title { font-weight: 600; font-size: .9375rem; }
+.fix-meta { margin-left: auto; color: var(--ink-3); font-size: .75rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+ol.queue ul { margin: .5rem 0 0; padding-left: 1.1rem; color: var(--ink-2); font-size: .875rem; }
+ol.queue ul li { margin: .1875rem 0; }
+
+/* ── checks table ─────────────────────────────────────────────────── */
+.scroll { overflow-x: auto; margin: 0 -1.5rem; padding: 0 1.5rem; }
+table { border-collapse: collapse; width: 100%; font-size: .8125rem; }
+thead th {
+  text-align: left; font-weight: 600; font-size: .6875rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3);
+  padding: 0 .75rem .5rem 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+}
+tbody td { padding: .5625rem .75rem .5625rem 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+td.id { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .75rem; color: var(--ink-2); white-space: nowrap; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+td.detail { color: var(--ink-2); }
+
+/* Status word + dot: never colour alone. */
+.status { display: inline-flex; align-items: center; gap: .4375rem; white-space: nowrap; font-weight: 500; }
+.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.s-pass { color: var(--good); }
+.s-partial { color: var(--warning); }
+.s-fail { color: var(--critical); }
+.s-na { color: var(--ink-3); }
+.s-na::before { background: none; box-shadow: inset 0 0 0 1px currentColor; }
+
+/* ── findings ─────────────────────────────────────────────────────── */
+.finding {
+  padding: 1.125rem 0 1.125rem 1rem; margin: 0;
+  border-left: 2px solid var(--rule); border-bottom: 1px solid var(--hairline);
+}
+.finding.sev-high { border-left-color: var(--critical); }
+.finding.sev-medium { border-left-color: var(--serious); }
+.finding.sev-low { border-left-color: var(--rule); }
+.finding-head { display: flex; align-items: baseline; gap: .625rem; flex-wrap: wrap; }
+.sev {
+  font-size: .625rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+}
+.finding-title { font-weight: 600; font-size: .9375rem; }
+.finding-check { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .6875rem; color: var(--ink-3); }
+.finding p { margin: .5rem 0 0; color: var(--ink-2); font-size: .875rem; max-width: 62ch; }
+.evidence { margin: .75rem 0 0; border: 1px solid var(--hairline); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.evidence + .evidence { margin-top: .375rem; }
+.ev-path {
+  padding: .375rem .625rem; background: var(--plane); border-bottom: 1px solid var(--hairline);
+  font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .6875rem; color: var(--ink-2);
+}
+.ev-code { padding: .5rem .625rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .75rem; color: var(--ink); overflow-x: auto; white-space: pre; }
+.empty { color: var(--ink-3); font-size: .875rem; font-style: italic; margin: 1rem 0 0; }
+
+footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--hairline); color: var(--ink-3); font-size: .75rem; line-height: 1.7; }
+footer a { color: var(--ink-2); }
+@media (max-width: 34rem) {
+  .axis { grid-template-columns: 1fr 3rem 2rem; }
+  .axis .meter { display: none; }
+  .figure { font-size: 3.5rem; }
+}
 </style>
 </head>
 <body>
-<main>
-  <h1>Agent Trust Score</h1>
-  <p class="sub">{{ repo.source }} · commit <code>{{ repo.commit }}</code> on <code>{{ repo.branch }}</code></p>
+<div class="wrap">
 
-  <div class="grade">
-    <span class="letter {{ overall.letter }}">{{ overall.letter }}</span>
-    <span class="score">{{ overall.score_text }}/100</span>
-  </div>
-  {% if overall.capped %}<div class="cap"><strong>Capped.</strong> {{ overall.cap_reason }}</div>{% endif %}
-  {% if repo.truncated %}<div class="cap"><strong>Truncated.</strong> This audit analyzed {{ repo.analyzed }} of {{ repo.total }} tracked files and did not see the whole repository.</div>{% endif %}
+  <p class="eyebrow">Agent Trust Score</p>
+  <h1 class="repo">{{ repo.source }}</h1>
+  <p class="meta">
+    <code>{{ repo.commit }}</code> on <code>{{ repo.branch }}</code> ·
+    {{ repo.analyzed }} of {{ repo.total }} tracked files analysed{% if repo.languages %} ·
+    {% for name, count in repo.languages %}{{ name }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+  </p>
 
-  <div class="wrap">
-  <table>
-    <thead><tr><th>Axis</th><th class="num">Score</th><th>Grade</th><th class="num">Failed</th></tr></thead>
-    <tbody>
-    {% for axis in axes %}
-      <tr><td>{{ axis.name }}</td><td class="num">{{ axis.score_text }}</td>
-          <td><span class="pill">{{ axis.letter }}</span></td><td class="num">{{ axis.failed }}</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
+  <section class="hero">
+    <div class="hero-top">
+      <div class="figure g-{{ overall.letter | replace('/', '') }}">{{ overall.score_text }}<span class="of">/100</span></div>
+      <div class="mark g-{{ overall.letter | replace('/', '') }}">{{ overall.letter }}</div>
+      <div class="hero-label">
+        <strong>{{ axes | selectattr('failed') | list | length }} of 5 axes with failures</strong>
+        {{ fixes | length }} ranked fix{{ '' if fixes | length == 1 else 'es' }}
+      </div>
+    </div>
+
+    {% if overall.capped %}
+    <p class="notice"><strong>Grade capped.</strong> {{ overall.cap_reason }}</p>
+    {% endif %}
+    {% if repo.truncated %}
+    <p class="notice soft"><strong>Truncated.</strong> {{ repo.analyzed }} of {{ repo.total }} tracked files were analysed; this audit did not see the whole repository.</p>
+    {% endif %}
+
+    <div class="axes">
+      {% for axis in axes %}
+      <div class="axis">
+        <div class="axis-name"><a href="#{{ axis.key }}">{{ axis.name }}</a></div>
+        <div class="meter g-{{ axis.letter | replace('/', '') }}"><i style="width: {{ axis.score if axis.score is not none else 0 }}%"></i></div>
+        <div class="axis-score">{{ axis.score_text }}</div>
+        <div class="axis-letter g-{{ axis.letter | replace('/', '') }}">{{ axis.letter }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
 
   <h2>Fix these first</h2>
   {% if fixes %}
-  <ol class="fixes">
+  <p class="section-note">Ranked by points recovered per hour of effort.</p>
+  <ol class="queue">
     {% for fix in fixes %}
-    <li><strong>{{ fix.title }}</strong> — {{ fix.effort }}, recovers {{ fix.points }} points on {{ fix.axis }}
+    <li>
+      <div class="fix-head">
+        <span class="fix-title">{{ fix.title }}</span>
+        <span class="fix-meta">{{ fix.effort }} · +{{ fix.points }} on {{ fix.axis.replace('_', ' ') }}</span>
+      </div>
       <ul>{% for step in fix.steps %}<li>{{ step }}</li>{% endfor %}</ul>
     </li>
     {% endfor %}
   </ol>
-  {% else %}<p class="empty">{{ no_fixes }}</p>{% endif %}
+  {% else %}
+  <p class="empty">{{ no_fixes }}</p>
+  {% endif %}
 
   {% for axis in axes %}
-  <h2>{{ axis.name }} — {{ axis.score_text }} ({{ axis.letter }})</h2>
-  <div class="wrap">
+  <h2 id="{{ axis.key }}">{{ axis.name }}<span class="h3-score">{{ axis.score_text }}/100 · {{ axis.letter }}</span></h2>
+
+  <div class="scroll">
   <table>
     <thead><tr><th>Check</th><th>Status</th><th class="num">Weight</th><th>Detail</th></tr></thead>
     <tbody>
-    {% for check in axis.checks %}
-      <tr><td><code>{{ check.id }}</code> {{ check.title }}</td>
-          <td><span class="pill {{ check.mark }}">{{ check.mark }}</span></td>
-          <td class="num">{{ check.weight }}</td><td>{{ check.detail }}</td></tr>
-    {% endfor %}
+      {% for check in axis.checks %}
+      <tr>
+        <td class="id">{{ check.id }}</td>
+        <td><span class="status s-{{ 'na' if check.status == 'not_applicable' else check.status }}">{{ check.mark }}</span></td>
+        <td class="num">{{ check.weight }}</td>
+        <td class="detail">{{ check.title }}{% if check.detail %} — {{ check.detail }}{% endif %}</td>
+      </tr>
+      {% endfor %}
     </tbody>
   </table>
   </div>
+
   {% if axis.findings %}
     {% for finding in axis.findings %}
-    <div class="finding">
-      <p><code>{{ finding.check_id }}</code> <span class="pill {{ finding.severity }}">{{ finding.severity }}</span>
-         <strong>{{ finding.title }}</strong></p>
+    <div class="finding sev-{{ finding.severity }}">
+      <div class="finding-head">
+        <span class="sev g-{{ 'F' if finding.severity == 'high' else ('D' if finding.severity == 'medium' else 'NA') }}">{{ finding.severity }}</span>
+        <span class="finding-title">{{ finding.title }}</span>
+        <span class="finding-check">{{ finding.check_id }}</span>
+      </div>
       <p>{{ finding.explanation }}</p>
       {% for item in finding.evidence %}
-        <code>{{ item.location }}</code>
-        {% if item.snippet %}<span class="snippet">{{ item.snippet }}</span>{% endif %}
+      <div class="evidence">
+        <div class="ev-path">{{ item.location }}</div>
+        {% if item.snippet %}<div class="ev-code">{{ item.snippet }}</div>{% endif %}
+      </div>
       {% endfor %}
     </div>
     {% endfor %}
-  {% else %}<p class="empty">{{ no_findings }}</p>{% endif %}
+  {% else %}
+  <p class="empty">{{ no_findings }}</p>
+  {% endif %}
   {% endfor %}
 
   <footer>
     Generated {{ generated_at }} · schema {{ schema_version }} ·
-    {% if llm.used %}explanations written by {{ llm.model }} (${{ llm.cost }}){% else %}template explanations{% if llm.fallback_reason %} ({{ llm.fallback_reason }}){% endif %}{% endif %}
-    <br>This report grades repository structure. It is not a security audit, and a passing grade certifies nothing.
+    {% if llm.used %}explanations written by {{ llm.model }} (${{ llm.cost }}){% else %}written-in explanations{% if llm.fallback_reason %} ({{ llm.fallback_reason }}){% endif %}{% endif %}<br>
+    This report grades repository structure. It is not a security audit, and a passing grade certifies nothing.
   </footer>
-</main>
+
+</div>
 </body>
 </html>

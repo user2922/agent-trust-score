@@ -61,9 +61,12 @@ def test_repo_script_tag_renders_as_text_not_markup() -> None:
 
 def test_html_makes_no_external_requests() -> None:
     html = render_html(golden_report())
-    # Resource references, not URLs appearing as text: the audited repo's own
-    # URL is legitimately printed on the page.
-    assert re.search(r"(?:src|href)\s*=", html) is None
+    # EXTERNAL references. In-page anchors (href="#tool_surface") are navigation,
+    # not a network request, and the audited repo's own URL is legitimately
+    # printed as text.
+    refs = re.findall(r"(?:src|href)\s*=\s*[\"']([^\"']*)", html)
+    external = [ref for ref in refs if not ref.startswith("#")]
+    assert external == [], f"external resource references: {external}"
     assert "<script" not in html.replace("&lt;script", "")
 
 
@@ -109,7 +112,7 @@ def test_axis_order_is_the_canonical_order_everywhere() -> None:
         name
         for line in render_html(report).splitlines()
         for name in names
-        if f"<td>{name}</td>" in line
+        if f">{name}</a>" in line
     ]
     # The cap reason also begins with an axis name, so a row must be the name
     # followed by its score column.
