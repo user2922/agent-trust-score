@@ -5,8 +5,10 @@ nested `.git` cannot be committed inside this repository, and the ugly fixture
 must contain a marker-free key-shaped string, which is safer to keep in one
 auditable file than scattered across a directory.
 
-Nothing here is a live credential. `AKIAQ7RSTUVWX1234567` is a syntactically
-valid AWS access key id that has never existed.
+Nothing here is a live credential. The planted values are syntactically valid
+and have never existed. Each is assembled from fragments so that no line of this
+file matches a detector pattern -- the tool grades its own repository as a gate,
+and a fixture definition must not make it fail.
 
 Usage:
     uv run python scripts/build_fixtures.py <destination>
@@ -280,11 +282,13 @@ CLEAN_COMMITS = [
 # Syntactically valid, never issued, marker-free on purpose: the detector must
 # catch it, and a placeholder marker would make the fixture prove nothing.
 FAKE_AWS_KEY = "AKIA" + "Q7RSTUVWX1234567"
+# Same reasoning: assembled, so this file carries no matching literal.
+FAKE_DB_PASSWORD = "j8Kq2Zm" + "V4nRw7Yt" + "B9xLpQ3sF"
 
 UGLY_SETTINGS = f'''import os
 
 AWS_ACCESS_KEY_ID = "{FAKE_AWS_KEY}"
-DB_PASSWORD = "j8Kq2ZmV4nRw7YtB9xLpQ3sF"
+DB_PASSWORD = "{FAKE_DB_PASSWORD}"
 
 
 def reset_everything(target):

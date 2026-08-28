@@ -129,3 +129,19 @@ def test_this_repo_grades_b_or_better_on_itself() -> None:
     assert report.overall.score is not None
     assert report.overall.score >= 80, f"self-grade fell to {report.overall.score}"
     assert not report.overall.capped
+
+
+def test_this_repo_contains_no_credential_shaped_literal() -> None:
+    """The fixture definitions must not trip the detector on their own source.
+
+    CI caught this once: the ugly fixture's password was a marker-free literal
+    and the docstring spelled the fake AWS key out, so the tool flagged its own
+    repository. Both are now assembled from fragments.
+    """
+    from agent_trust.pipeline import audit
+
+    report = audit(str(ROOT), use_llm=False, use_cache=False, timeout=120)
+    secrets = [f for f in report.findings if f.check_id == "BR-01"]
+    assert secrets == [], (
+        f"BR-01 fires on this repo: {[e.path for f in secrets for e in f.evidence]}"
+    )
