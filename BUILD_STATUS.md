@@ -18,8 +18,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 11 | Verifiability | **DONE** - Checkpoint 11 passed 8/8 |
 | 12 | Context Quality | **DONE** - Checkpoint 12 passed 8/8 |
 | 13 | Observability | **DONE** - Checkpoint 13 passed 8/8 |
-| 14 | LLM enrichment | next |
-| 15 | Packaging, docs, polish | — |
+| 14 | LLM enrichment | **DONE** - Checkpoint 14 passed 8/8 |
+| 15 | Packaging, docs, polish | next |
 | 16 | Testing, fixtures, CI | — |
 
 ## Decisions made in Prompt 1
@@ -158,3 +158,21 @@ output is what `ruff format --check` accepts. CI verifies with ruff either way.
    single self-contained file with no external requests, so the deploy is a
    directory of static HTML and nothing else. Slot it after Prompt 16, when the
    two fixtures exist and produce real reports.
+
+## Decisions made in Prompt 14
+
+- **anthropic 1.x is built on `httpx2`, not `httpx`.** Constructing the SDK's own
+  error types in tests needs the same library the SDK uses.
+- **The response model goes in `output_format`, not `output_config.format`.**
+  `output_config` carries `effort` only. Found by reading the installed
+  `Messages.parse` signature rather than trusting recall.
+- **Rule B is enforced by an assertion, not a comment.** After merging prose the
+  code re-derives the stable payload and raises if `overall`, `axes`, `repo`, any
+  severity, or the fix ordering moved.
+- Every failure degrades: no key, timeout, connection error, rate limit, 5xx,
+  refusal, malformed response and missing structured output all keep the template
+  text. The only raise is a model-not-found 404, which names the configured id --
+  silently grading with a different model than the operator asked for is worse
+  than stopping.
+- The gate suite now takes ~80s; run `check_all.sh` with a timeout above two
+  minutes.

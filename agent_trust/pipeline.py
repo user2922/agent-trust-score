@@ -20,6 +20,7 @@ from agent_trust import cache
 from agent_trust.acquire import acquire, peek_commit_sha, read_facts
 from agent_trust.analyzers import REGISTRY
 from agent_trust.config import Settings, get_settings
+from agent_trust.enrich import enrich
 from agent_trust.inventory import RepoContext, build_context
 from agent_trust.limits import Budget, Deadline
 from agent_trust.logging import get_logger
@@ -95,7 +96,6 @@ def audit(
         deadline.check("analysis")
 
         axis_scores, overall, findings, fixes = score(results)
-        llm = _enrich_placeholder(config, use_llm)
 
         report = Report(
             generated_at=datetime.now(UTC),
@@ -105,8 +105,13 @@ def audit(
             axes=axis_scores,
             findings=findings,
             fixes=fixes,
-            llm=llm,
+            llm=LlmUsage(used=False, fallback_reason="--no-llm"),
         )
+
+        if use_llm:
+            deadline.check("enrichment")
+            report = enrich(report, config, docs=_docs_excerpt(ctx))
+
         if use_cache:
             cache.write(config.cache_dir, report)
         return report
@@ -126,17 +131,15 @@ def _repo_info(ctx: RepoContext) -> RepoInfo:
     )
 
 
-def _enrich_placeholder(config: Settings, use_llm: bool) -> LlmUsage:
-    """Report why enrichment did not run.
+def _docs_excerpt(ctx: RepoContext) -> str:
+    """The agent doc and README, for the model to ground its prose in."""
+    from agent_trust.analyzers.context_quality import agent_doc, readme
 
-    Prompt 14 replaces this with the real call. Until then every audit is a
-    template-text audit, and says so rather than pretending otherwise.
-    """
-    if not use_llm:
-        return LlmUsage(used=False, fallback_reason="--no-llm")
-    if not config.llm_available:
-        return LlmUsage(used=False, fallback_reason="no ANTHROPIC_API_KEY configured")
-    return LlmUsage(used=False, fallback_reason="enrichment not yet implemented")
+    parts = []
+    for path in (agent_doc(ctx), readme(ctx)):
+        if path:
+            parts.append(f"--- {path} ---\n{ctx.read_text(path)}")
+    return "\n\n".join(parts)
 
 
 def write_reports(report: Report, out_dir: Path, formats: Sequence[str]) -> list[Path]:
