@@ -1089,12 +1089,11 @@ jobs and the branch it triggers on, then prove it ran.
    same repo without it reports nothing. A detector nobody has watched fail is
    decoration.
 
-6. .github/workflows/ci.yml — on push and pull_request to the default branch.
-   Jobs, each named and each with its run commands: lint running ruff, typecheck
-   running mypy strict, secrets running scripts/check_secrets.sh, test running
-   pytest with the coverage floor, and build running the wheel build. Set up
-   Python 3.12 and uv explicitly. Confirm the trigger branch name matches this
-   repository's actual default branch before committing the file.
+6. .github/workflows/ci.yml already exists — it was created after Prompt 2a and
+   has been green since. EXTEND it rather than replacing it: add a determinism
+   job running tests/test_determinism.py and an acceptance job running both
+   fixtures end to end. Leave the existing lint, typecheck, secrets, test and
+   build jobs and the master trigger alone.
 
 7. After pushing, check that the workflow has a run history. An empty history
    reads exactly like a passing one.

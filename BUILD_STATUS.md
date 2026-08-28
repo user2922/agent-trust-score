@@ -81,3 +81,18 @@ ships usable without one.
 - Three Checkpoint 2a items were unverifiable as written (they invoked
   `agent-trust`, whose `cli.py` is Prompt 7's file). Rewritten to assert the same
   behaviour at the layer that exists; the CLI form moved to Checkpoint 7.
+
+## CI moved earlier (was Prompt 16)
+
+Pushed to `github.com/user2922/agent-trust-score` (private) after Prompt 2a.
+Reason: ruff and mypy cannot execute on the development machine, so they had no
+signal at all; on Linux CI they do. Five named jobs — lint, typecheck, secrets,
+test, build — triggering on `master`, which is this repo's actual default branch.
+
+**Verified it has actually run**, not merely that the file exists: `gh run list`
+shows runs, and the first one was red. It found three defects invisible locally
+(E501, an unused `type: ignore`, and a `ruff format` divergence). Green as of
+run 33179088546.
+
+From here every prompt pushes, and CI is the lint/typecheck gate. Prompt 16 now
+extends this workflow with the e2e/determinism jobs rather than creating it.
