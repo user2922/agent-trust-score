@@ -135,4 +135,4 @@ __all__ = [
 # Imported for their registration side effects. This sits at the BOTTOM of the
 # module on purpose: each analyzer imports the helpers defined above, so moving
 # these up turns the dependency into a cycle.
-from agent_trust.analyzers import tool_surface  # noqa: E402, F401
+from agent_trust.analyzers import blast_radius, tool_surface  # noqa: E402, F401

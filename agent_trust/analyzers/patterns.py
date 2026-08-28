@@ -102,3 +102,64 @@ ENV_EXAMPLE_NAMES = (".env.example", ".env.sample", ".env.template", "env.exampl
 CONFIG_SCHEMA = re.compile(
     r"\b(?:BaseSettings|SettingsConfigDict|createEnv|envSchema|z\.object\s*\(\s*\{[^}]*process\.env)",
 )
+
+# ── BR-01 · committed secrets ───────────────────────────────────────────────
+#
+# Provider patterns first: a well-formed AWS key is a hit regardless of entropy.
+# The generic rule below is the only one that consults entropy, because it is
+# the only one that cannot tell a credential from a sentence by shape alone.
+
+SECRET_PROVIDERS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("aws_access_key_id", re.compile(r"AKIA[0-9A-Z]{16}")),
+    ("github_token", re.compile(r"gh[pousr]_[A-Za-z0-9]{36,}")),
+    ("stripe_live_key", re.compile(r"sk_live_[A-Za-z0-9]{20,}")),
+    ("slack_token", re.compile(r"xox[baprs]-[A-Za-z0-9-]{10,}")),
+    ("google_api_key", re.compile(r"AIza[0-9A-Za-z_\-]{35}")),
+    ("anthropic_key", re.compile(r"sk-ant-[A-Za-z0-9_\-]{32,}")),
+    ("openai_key", re.compile(r"sk-[A-Za-z0-9]{32,}")),
+    ("private_key_block", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
+    ("json_web_token", re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}")),
+)
+
+# name = "value" where the name looks like a credential and the value is long.
+SECRET_ASSIGNMENT = re.compile(
+    r"(?i)\b(?P<name>[A-Za-z0-9_.\-]*"
+    r"(?:secret|token|password|passwd|api_?key|access_?key|private_?key|credential)"
+    r"[A-Za-z0-9_.\-]*)\s*[:=]\s*"
+    r"[\"'`](?P<value>[^\"'`\n]{20,})[\"'`]"
+)
+
+# Paths whose contents are examples by construction.
+SECRET_ALLOWLIST_PATHS = (
+    ".example",
+    ".sample",
+    ".template",
+    ".dist",
+    "/tests/",
+    "/test/",
+    "/fixtures/",
+    "/__mocks__/",
+    "/docs/",
+    "/examples/",
+    ".snap",
+)
+SECRET_ALLOWLIST_PATH_PREFIXES = ("tests/", "test/", "fixtures/", "docs/", "examples/")
+
+# Values that announce themselves as placeholders.
+SECRET_ALLOWLIST_VALUES = re.compile(
+    r"(?i)(example|placeholder|changeme|change_me|your[_-]?|dummy|foobar|xxxx|0000|"
+    r"sk_test_|pk_test_|not[_-]?a[_-]?real|redacted|sample|<|\{\{|\$\{|process\.env|os\.environ|"
+    r"getenv|todo|insert|replace[_-]?me|\.\.\.)"
+)
+
+# ── BR-02 / BR-03 · env files and gitignore ─────────────────────────────────
+
+TRACKED_ENV_NAMES = (".env", ".env.local", ".env.production", ".env.prod", ".env.development")
+
+GITIGNORE_ENV = re.compile(r"^\s*\.?\*?\.?env", re.MULTILINE | re.IGNORECASE)
+GITIGNORE_KEYS = re.compile(
+    r"(?i)^\s*\*?\.?(pem|key|p12|pfx|keystore|credentials?)\b", re.MULTILINE
+)
+GITIGNORE_BUILD = re.compile(
+    r"(?i)^\s*/?(dist|build|node_modules|target|\.venv|venv|__pycache__|coverage)\b", re.MULTILINE
+)

@@ -3,6 +3,15 @@
 .env.*
 !.env.example
 
+# Credential material (BR-03: this tool flagged its own repo for missing these)
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+credentials
+credentials.json
+
 # Python
 __pycache__/
 *.py[cod]

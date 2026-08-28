@@ -13,8 +13,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 6 | Renderers | **DONE** - Checkpoint 6 passed 8/8 |
 | 7 | CLI, MCP server, cache | **DONE** - Checkpoint 7 passed 10/10 |
 | 8 | Analyzer framework + Tool Surface | **DONE** - Checkpoint 8 passed 8/8 |
-| 9 | Blast Radius: secrets | next |
-| 10 | Blast Radius: destructive ops | — |
+| 9 | Blast Radius: secrets | **DONE** - Checkpoint 9 passed 8/8 |
+| 10 | Blast Radius: destructive ops | next |
 | 11 | Verifiability | — |
 | 12 | Context Quality | — |
 | 13 | Observability | — |
@@ -126,3 +126,22 @@ output is what `ruff format --check` accepts. CI verifies with ruff either way.
   print while the analyzer registry is still empty.
 - The analyzer registry moved to Prompt 7 (from 8) because the pipeline has to
   iterate something. Prompt 8 fills it; the empty registry yields five N/A axes.
+
+## Spot check - detector accuracy (after Prompt 9)
+
+- **Zero false secrets on three real public repos**: psf/requests (124 files),
+  pallets/click (163), tiangolo/typer (769). One of the four hackathon success
+  criteria, verified early rather than assumed.
+- **Every provider pattern catches its planted key** - 12 parametrized positives.
+- **Redaction verified across every artifact**: a repo with a planted AWS key and
+  GitHub token produced report.md, report.json and report.html with **zero**
+  full-value occurrences. The report shows `AKIA...67`.
+- **Entropy alone is not a secret detector.** "the quick brown fox jumps over the
+  lazy dog" is a pangram, so it scores ABOVE the entropy threshold. Credential
+  material contains no whitespace; that structural rule runs first and does most
+  of the work. Regression guard in tests/test_analyzers_secrets.py.
+- `tests/test_analyzers_secrets.py` is the one source file excluded from the
+  repo's own scanner - it is the fixture corpus and must hold real-shaped values
+  with no placeholder marker. Every value in it is synthetic.
+- The tool flagged its own `.gitignore` for missing credential patterns (BR-03
+  partial). Fixed by taking the advice; blast_radius is now 100.
