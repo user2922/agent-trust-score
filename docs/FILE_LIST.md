@@ -1,8 +1,9 @@
 # File list — every file, by the prompt that creates it
 
-Derived from `SPEC.md` § File Layout. A file appears exactly once. `redact.py`
-lands at Prompt 2b, ahead of every module that reads repository content — that
-ordering is a safety constraint, not a preference.
+Derived from `SPEC.md` § File Layout. `redact.py` lands at Prompt **2a**, ahead
+of every module that reads repository content — that ordering is a safety
+constraint, not a preference. It moved up from 2b because `logging.py` depends
+on it and the alternative was a stub.
 
 | Prompt | Files |
 |---|---|
@@ -26,7 +27,7 @@ ordering is a safety constraint, not a preference.
 
 ## Ordering constraints that must hold
 
-1. `redact.py` (2b) precedes `inventory.py` (4) and every analyzer (8–13).
+1. `redact.py` (2a) precedes `inventory.py` (4) and every analyzer (8–13).
 2. `models.py` (3) precedes everything that constructs a `Report`.
 3. `scoring/` (5) precedes `pipeline.py` (7) — the CLI cannot render without it.
 4. `patterns.py` (8) precedes every analyzer that matches repo content.

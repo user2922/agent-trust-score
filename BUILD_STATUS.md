@@ -75,8 +75,8 @@ ships usable without one.
   removed. It scans tracked *and* untracked-not-ignored files, allowlists by
   value marker rather than by excluding `tests/`, always reports its suppression
   count, and exits 2 when it enumerates fewer than 5 files.
-- **One real bug caught by the tests**: the control-character regex listed bare
-  `` before the ANSI-sequence alternative, so it stripped the ESC and left
+- **One real bug caught by the tests**: the control-character regex listed the
+  bare ESC character before the ANSI-sequence alternative, so it stripped the ESC and left
   `[31m` as visible text. Ordering fixed.
 - Three Checkpoint 2a items were unverifiable as written (they invoked
   `agent-trust`, whose `cli.py` is Prompt 7's file). Rewritten to assert the same
