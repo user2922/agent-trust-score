@@ -41,9 +41,14 @@ HYGIENE_PASS = 0.60
 HYGIENE_PARTIAL = 0.40
 MIN_SUBJECT_LENGTH = 15
 
-# OB-02 excludes these: a print in a test or a one-off script is not a logging
-# strategy failure.
+# Excluded from every content check on this axis, not just OB-02.
+#
+# A print in a test is not a logging-strategy failure -- and, the direction that
+# actually bit: a fixture, a tutorial or a generator string is not the repo's own
+# error reporting. Reading them as such gave this tool three false passes on its
+# own repository, and would credit any project that ships example code in docs/.
 NON_APPLICATION_DIRS = ("tests/", "test/", "scripts/", "examples/", "docs/", "bin/")
+SOURCE_SUFFIXES = (".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rb", ".java", ".rs", ".sql")
 
 
 def _dependencies(ctx: RepoContext) -> set[str]:
@@ -63,12 +68,13 @@ def _dependencies(ctx: RepoContext) -> set[str]:
     return names
 
 
-def application_files(ctx: RepoContext) -> list[str]:
-    """Source files that are application code, not tests or scripts."""
+def application_files(ctx: RepoContext, suffixes: tuple[str, ...] | None = None) -> list[str]:
+    """Source files that are application code -- not tests, scripts or docs."""
+    wanted = suffixes or (".py", ".ts", ".tsx", ".js", ".jsx")
     return [
         path
         for path in ctx.files
-        if path.endswith((".py", ".ts", ".tsx", ".js", ".jsx"))
+        if path.endswith(wanted)
         and not path.startswith(NON_APPLICATION_DIRS)
         and not any(f"/{d}" in f"/{path}" for d in NON_APPLICATION_DIRS)
     ]
@@ -80,10 +86,8 @@ def check_structured_logging(ctx: RepoContext) -> CheckResult:
     if declared:
         return result(OB_01, CheckStatus.PASS, f"Declares {sorted(declared)[0]}.")
 
-    for path in ctx.files:
-        if path.endswith((".py", ".ts", ".js")) and p.STRUCTURED_LOGGING.search(
-            ctx.read_text(path)
-        ):
+    for path in application_files(ctx, (".py", ".ts", ".js")):
+        if p.STRUCTURED_LOGGING.search(ctx.read_text(path)):
             return result(
                 OB_01,
                 CheckStatus.PASS,
@@ -123,10 +127,8 @@ def check_error_reporting(ctx: RepoContext) -> CheckResult:
     An installed-but-never-initialised reporter is the common real-world case and
     it reports nothing, so it scores partial.
     """
-    for path in ctx.files:
-        if path.endswith((".py", ".ts", ".tsx", ".js")) and p.ERROR_REPORTING_INIT.search(
-            ctx.read_text(path)
-        ):
+    for path in application_files(ctx):
+        if p.ERROR_REPORTING_INIT.search(ctx.read_text(path)):
             return result(
                 OB_03,
                 CheckStatus.PASS,
@@ -147,7 +149,7 @@ def check_error_reporting(ctx: RepoContext) -> CheckResult:
 
 def check_audit_trail(ctx: RepoContext) -> CheckResult:
     """OB-04: a record of who did what, when."""
-    for path in ctx.files:
+    for path in application_files(ctx, SOURCE_SUFFIXES):
         text = ctx.read_text(path)
         if p.AUDIT_TRAIL.search(text):
             return result(
@@ -156,7 +158,7 @@ def check_audit_trail(ctx: RepoContext) -> CheckResult:
                 f"Audit trail in {path}.",
                 [evidence_for_path(path, "audit_trail")],
             )
-    for path in ctx.files:
+    for path in application_files(ctx, SOURCE_SUFFIXES):
         if p.AUDIT_TRIPLE.search(ctx.read_text(path)):
             return result(
                 OB_04,
@@ -213,17 +215,18 @@ def check_changelog(ctx: RepoContext) -> CheckResult:
 
 def check_liveness(ctx: RepoContext) -> CheckResult:
     """OB-07: a health endpoint, or a version flag on the CLI."""
-    for path in ctx.files:
-        if path.endswith((".py", ".ts", ".tsx", ".js", ".go", ".rb")) and p.HEALTH_ENDPOINT.search(
-            ctx.read_text(path)
-        ):
+    for path in application_files(ctx, (".py", ".ts", ".tsx", ".js", ".go", ".rb")):
+        if p.HEALTH_ENDPOINT.search(ctx.read_text(path)):
             return result(
                 OB_07,
                 CheckStatus.PASS,
                 f"Health surface in {path}.",
                 [evidence_for_path(path, "health_endpoint")],
             )
-    for path in ctx.paths_with_suffix(".py", ".ts", ".js") + ctx.paths_named("pyproject.toml"):
+    version_sources = application_files(ctx, (".py", ".ts", ".js")) + list(
+        ctx.paths_named("pyproject.toml")
+    )
+    for path in version_sources:
         if p.VERSION_FLAG.search(ctx.read_text(path)):
             return result(OB_07, CheckStatus.PASS, f"Version surface in {path}.")
     return result(OB_07, CheckStatus.FAIL, searched("a /health route", "a --version flag"))

@@ -36,3 +36,4 @@ report.html
 .cache/
 dist/
 site/
+.demo/
