@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Trust Score — {{ repo.source }}</title>
+<style>
+:root {
+  --bg: #fbfaf8; --fg: #1c1b19; --muted: #6b6862; --line: #e2ddd5;
+  --card: #ffffff; --accent: #7a5cff;
+  --a: #1f7a4d; --b: #4f7a1f; --c: #9a7a12; --d: #a85a12; --f: #a8261a;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#16151a; --fg:#eceaf3; --muted:#a09caa; --line:#2e2c36;
+          --card:#1e1d24; --a:#5fd39b; --b:#a8d35f; --c:#e0c05a; --d:#e39a5a; --f:#f0776a; }
+}
+* { box-sizing: border-box; }
+body { margin:0; padding:2rem 1.25rem 4rem; background:var(--bg); color:var(--fg);
+  font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { max-width: 68rem; margin: 0 auto; }
+h1 { font-size:1.5rem; margin:0 0 .25rem; letter-spacing:-.01em; }
+h2 { font-size:1.15rem; margin:2.5rem 0 .75rem; padding-top:1.25rem; border-top:1px solid var(--line); }
+.sub { color:var(--muted); font-size:.9rem; margin:0 0 1.5rem; }
+.grade { display:flex; align-items:baseline; gap:.75rem; margin:1rem 0; }
+.letter { font-size:3.5rem; font-weight:700; line-height:1; letter-spacing:-.03em; }
+.letter.A{color:var(--a)}.letter.B{color:var(--b)}.letter.C{color:var(--c)}
+.letter.D{color:var(--d)}.letter.F{color:var(--f)}
+.score { font-size:1.1rem; color:var(--muted); }
+.cap { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--f);
+  padding:.75rem 1rem; border-radius:.4rem; margin:1rem 0; font-size:.92rem; }
+.wrap { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-size:.9rem; margin:.5rem 0 1rem; }
+th,td { text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--line); vertical-align:top; }
+th { font-weight:600; color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
+td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+.pill { display:inline-block; padding:.1rem .5rem; border-radius:99px; font-size:.75rem;
+  font-weight:600; border:1px solid var(--line); }
+.pill.FAIL{color:var(--f);border-color:var(--f)}
+.pill.partial{color:var(--c);border-color:var(--c)}
+.pill.pass{color:var(--a);border-color:var(--a)}
+.pill.high{color:var(--f);border-color:var(--f)}
+.pill.medium{color:var(--d);border-color:var(--d)}
+.pill.low{color:var(--muted)}
+.finding { background:var(--card); border:1px solid var(--line); border-radius:.5rem;
+  padding:.9rem 1.1rem; margin:.75rem 0; }
+.finding p { margin:.4rem 0; }
+code, .snippet { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:.82rem; }
+.snippet { display:block; color:var(--muted); overflow-x:auto; white-space:pre; padding:.25rem 0; }
+.empty { color:var(--muted); font-style:italic; }
+footer { margin-top:3rem; padding-top:1.25rem; border-top:1px solid var(--line);
+  color:var(--muted); font-size:.83rem; }
+ol.fixes { padding-left:1.25rem; } ol.fixes li { margin:.6rem 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Agent Trust Score</h1>
+  <p class="sub">{{ repo.source }} · commit <code>{{ repo.commit }}</code> on <code>{{ repo.branch }}</code></p>
+
+  <div class="grade">
+    <span class="letter {{ overall.letter }}">{{ overall.letter }}</span>
+    <span class="score">{{ overall.score_text }}/100</span>
+  </div>
+  {% if overall.capped %}<div class="cap"><strong>Capped.</strong> {{ overall.cap_reason }}</div>{% endif %}
+  {% if repo.truncated %}<div class="cap"><strong>Truncated.</strong> This audit analyzed {{ repo.analyzed }} of {{ repo.total }} tracked files and did not see the whole repository.</div>{% endif %}
+
+  <div class="wrap">
+  <table>
+    <thead><tr><th>Axis</th><th class="num">Score</th><th>Grade</th><th class="num">Failed</th></tr></thead>
+    <tbody>
+    {% for axis in axes %}
+      <tr><td>{{ axis.name }}</td><td class="num">{{ axis.score_text }}</td>
+          <td><span class="pill">{{ axis.letter }}</span></td><td class="num">{{ axis.failed }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Fix these first</h2>
+  {% if fixes %}
+  <ol class="fixes">
+    {% for fix in fixes %}
+    <li><strong>{{ fix.title }}</strong> — {{ fix.effort }}, recovers {{ fix.points }} points on {{ fix.axis }}
+      <ul>{% for step in fix.steps %}<li>{{ step }}</li>{% endfor %}</ul>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}<p class="empty">{{ no_fixes }}</p>{% endif %}
+
+  {% for axis in axes %}
+  <h2>{{ axis.name }} — {{ axis.score_text }} ({{ axis.letter }})</h2>
+  <div class="wrap">
+  <table>
+    <thead><tr><th>Check</th><th>Status</th><th class="num">Weight</th><th>Detail</th></tr></thead>
+    <tbody>
+    {% for check in axis.checks %}
+      <tr><td><code>{{ check.id }}</code> {{ check.title }}</td>
+          <td><span class="pill {{ check.mark }}">{{ check.mark }}</span></td>
+          <td class="num">{{ check.weight }}</td><td>{{ check.detail }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if axis.findings %}
+    {% for finding in axis.findings %}
+    <div class="finding">
+      <p><code>{{ finding.check_id }}</code> <span class="pill {{ finding.severity }}">{{ finding.severity }}</span>
+         <strong>{{ finding.title }}</strong></p>
+      <p>{{ finding.explanation }}</p>
+      {% for item in finding.evidence %}
+        <code>{{ item.location }}</code>
+        {% if item.snippet %}<span class="snippet">{{ item.snippet }}</span>{% endif %}
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% else %}<p class="empty">{{ no_findings }}</p>{% endif %}
+  {% endfor %}
+
+  <footer>
+    Generated {{ generated_at }} · schema {{ schema_version }} ·
+    {% if llm.used %}explanations written by {{ llm.model }} (${{ llm.cost }}){% else %}template explanations{% if llm.fallback_reason %} ({{ llm.fallback_reason }}){% endif %}{% endif %}
+    <br>This report grades repository structure. It is not a security audit, and a passing grade certifies nothing.
+  </footer>
+</main>
+</body>
+</html>

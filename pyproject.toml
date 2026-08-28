@@ -72,6 +72,7 @@ no_implicit_reexport = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 addopts = "--cov=agent_trust --cov-report=term-missing --cov-fail-under=80"
 
 [tool.coverage.run]

@@ -1,0 +1,389 @@
+{
+  "axes": [
+    {
+      "checks": [
+        {
+          "detail": "",
+          "earned": 20.0,
+          "evidence": [],
+          "id": "TS-01",
+          "status": "pass",
+          "title": "MCP server declared",
+          "weight": 20
+        },
+        {
+          "detail": "",
+          "earned": 20.0,
+          "evidence": [],
+          "id": "TS-02",
+          "status": "pass",
+          "title": "Machine-readable API schema",
+          "weight": 20
+        },
+        {
+          "detail": "42% annotated",
+          "earned": 7.5,
+          "evidence": [],
+          "id": "TS-05",
+          "status": "partial",
+          "title": "Typed public boundaries",
+          "weight": 15
+        },
+        {
+          "detail": "no manifest",
+          "earned": 0.0,
+          "evidence": [],
+          "id": "TS-06",
+          "status": "not_applicable",
+          "title": "Parseable package manifest",
+          "weight": 10
+        }
+      ],
+      "key": "tool_surface",
+      "letter": "B",
+      "name": "Tool Surface",
+      "score": 86,
+      "weight": 0.2
+    },
+    {
+      "checks": [
+        {
+          "detail": "1 match, 3 placeholders suppressed",
+          "earned": 0.0,
+          "evidence": [
+            {
+              "line": 12,
+              "matcher": "aws_access_key_id",
+              "path": "config/settings.py",
+              "snippet": "AWS_KEY = \"AKIA\u2026LE\""
+            }
+          ],
+          "id": "BR-01",
+          "status": "fail",
+          "title": "No committed secrets",
+          "weight": 30
+        },
+        {
+          "detail": "",
+          "earned": 0.0,
+          "evidence": [],
+          "id": "BR-02",
+          "status": "fail",
+          "title": ".env not tracked",
+          "weight": 12
+        },
+        {
+          "detail": "",
+          "earned": 4.0,
+          "evidence": [],
+          "id": "BR-03",
+          "status": "partial",
+          "title": "gitignore covers sensitive paths",
+          "weight": 8
+        },
+        {
+          "detail": "",
+          "earned": 0.0,
+          "evidence": [],
+          "id": "BR-07",
+          "status": "fail",
+          "title": "Ownership config",
+          "weight": 5
+        }
+      ],
+      "key": "blast_radius",
+      "letter": "F",
+      "name": "Blast Radius",
+      "score": 7,
+      "weight": 0.2
+    },
+    {
+      "checks": [
+        {
+          "detail": "",
+          "earned": 20.0,
+          "evidence": [],
+          "id": "VF-01",
+          "status": "pass",
+          "title": "Test suite exists",
+          "weight": 20
+        },
+        {
+          "detail": "",
+          "earned": 15.0,
+          "evidence": [],
+          "id": "VF-05",
+          "status": "pass",
+          "title": "CI actually runs tests",
+          "weight": 15
+        }
+      ],
+      "key": "verifiability",
+      "letter": "A",
+      "name": "Verifiability",
+      "score": 100,
+      "weight": 0.2
+    },
+    {
+      "checks": [
+        {
+          "detail": "README begins: <script>alert('xss')</script>",
+          "earned": 10.0,
+          "evidence": [
+            {
+              "line": 1,
+              "matcher": "readme_words",
+              "path": "README.md",
+              "snippet": "<script>alert('xss')</script>"
+            }
+          ],
+          "id": "CQ-02",
+          "status": "pass",
+          "title": "README with substance",
+          "weight": 10
+        },
+        {
+          "detail": "",
+          "earned": 15.0,
+          "evidence": [],
+          "id": "CQ-05",
+          "status": "pass",
+          "title": "Run and test commands",
+          "weight": 15
+        },
+        {
+          "detail": "3 of 5 paths resolve",
+          "earned": 2.5,
+          "evidence": [],
+          "id": "CQ-08",
+          "status": "partial",
+          "title": "Docs resolve to reality",
+          "weight": 5
+        }
+      ],
+      "key": "context_quality",
+      "letter": "A",
+      "name": "Context Quality",
+      "score": 92,
+      "weight": 0.2
+    },
+    {
+      "checks": [
+        {
+          "detail": "no source files",
+          "earned": 0.0,
+          "evidence": [],
+          "id": "OB-01",
+          "status": "not_applicable",
+          "title": "Structured logging",
+          "weight": 25
+        }
+      ],
+      "key": "observability",
+      "letter": "N/A",
+      "name": "Observability",
+      "score": null,
+      "weight": 0.2
+    }
+  ],
+  "findings": [
+    {
+      "axis": "tool_surface",
+      "check_id": "TS-05",
+      "evidence": [],
+      "explanation": "Partially satisfied. Untyped public boundaries give an agent nothing to check its calls against before running them.",
+      "explanation_source": "template",
+      "id": "F-TS-05",
+      "severity": "low",
+      "title": "Typed public boundaries"
+    },
+    {
+      "axis": "blast_radius",
+      "check_id": "BR-01",
+      "evidence": [
+        {
+          "line": 12,
+          "matcher": "aws_access_key_id",
+          "path": "config/settings.py",
+          "snippet": "AWS_KEY = \"AKIA\u2026LE\""
+        }
+      ],
+      "explanation": "A committed secret is live credential material in every clone, and an agent with repository access can read and transmit it.",
+      "explanation_source": "template",
+      "id": "F-BR-01",
+      "severity": "high",
+      "title": "No committed secrets"
+    },
+    {
+      "axis": "blast_radius",
+      "check_id": "BR-02",
+      "evidence": [],
+      "explanation": "A tracked .env file puts real environment values in history where they outlive any later deletion.",
+      "explanation_source": "template",
+      "id": "F-BR-02",
+      "severity": "medium",
+      "title": ".env not tracked"
+    },
+    {
+      "axis": "blast_radius",
+      "check_id": "BR-03",
+      "evidence": [],
+      "explanation": "Partially satisfied. Without .gitignore coverage the next careless `git add -A` commits credentials.",
+      "explanation_source": "template",
+      "id": "F-BR-03",
+      "severity": "low",
+      "title": "gitignore covers sensitive paths"
+    },
+    {
+      "axis": "blast_radius",
+      "check_id": "BR-07",
+      "evidence": [],
+      "explanation": "With no ownership or protection config, nothing forces review of a change an agent proposes.",
+      "explanation_source": "template",
+      "id": "F-BR-07",
+      "severity": "low",
+      "title": "Ownership config"
+    },
+    {
+      "axis": "context_quality",
+      "check_id": "CQ-08",
+      "evidence": [],
+      "explanation": "Partially satisfied. Documentation pointing at files that no longer exist is worse than none, because the agent trusts it.",
+      "explanation_source": "template",
+      "id": "F-CQ-08",
+      "severity": "low",
+      "title": "Docs resolve to reality"
+    }
+  ],
+  "fixes": [
+    {
+      "axis": "blast_radius",
+      "effort_minutes": 15,
+      "finding_ids": [
+        "F-BR-02"
+      ],
+      "id": "FIX-BR-02",
+      "patch": null,
+      "ratio": 48.0,
+      "risk_reduction": 12,
+      "steps": [
+        "Untrack the .env file with `git rm --cached`.",
+        "Add it to .gitignore and rotate anything it contained."
+      ],
+      "title": ".env not tracked"
+    },
+    {
+      "axis": "blast_radius",
+      "effort_minutes": 45,
+      "finding_ids": [
+        "F-BR-01"
+      ],
+      "id": "FIX-BR-01",
+      "patch": null,
+      "ratio": 40.0,
+      "risk_reduction": 30,
+      "steps": [
+        "Rotate the exposed credential now -- it is in every clone and in history.",
+        "Remove it from the working tree and move the value to an environment variable.",
+        "Purge it from history, or treat the repository as compromised."
+      ],
+      "title": "No committed secrets"
+    },
+    {
+      "axis": "blast_radius",
+      "effort_minutes": 10,
+      "finding_ids": [
+        "F-BR-07"
+      ],
+      "id": "FIX-BR-07",
+      "patch": null,
+      "ratio": 30.0,
+      "risk_reduction": 5,
+      "steps": [
+        "Add a CODEOWNERS file so changes need a named reviewer."
+      ],
+      "title": "Ownership config"
+    },
+    {
+      "axis": "blast_radius",
+      "effort_minutes": 10,
+      "finding_ids": [
+        "F-BR-03"
+      ],
+      "id": "FIX-BR-03",
+      "patch": null,
+      "ratio": 24.0,
+      "risk_reduction": 4,
+      "steps": [
+        "Add .env, key and credential patterns, and build output to .gitignore."
+      ],
+      "title": "gitignore covers sensitive paths"
+    },
+    {
+      "axis": "context_quality",
+      "effort_minutes": 20,
+      "finding_ids": [
+        "F-CQ-08"
+      ],
+      "id": "FIX-CQ-08",
+      "patch": null,
+      "ratio": 9.0,
+      "risk_reduction": 3,
+      "steps": [
+        "Update the paths cited in the agent doc so they resolve."
+      ],
+      "title": "Docs resolve to reality"
+    },
+    {
+      "axis": "tool_surface",
+      "effort_minutes": 240,
+      "finding_ids": [
+        "F-TS-05"
+      ],
+      "id": "FIX-TS-05",
+      "patch": null,
+      "ratio": 2.0,
+      "risk_reduction": 8,
+      "steps": [
+        "Enable strict type checking and annotate the public functions first."
+      ],
+      "title": "Typed public boundaries"
+    }
+  ],
+  "generated_at": "2026-01-15T09:30:00Z",
+  "llm": {
+    "cost_usd": 0.0,
+    "fallback_reason": "no ANTHROPIC_API_KEY configured",
+    "input_tokens": 0,
+    "model": null,
+    "output_tokens": 0,
+    "used": false
+  },
+  "overall": {
+    "cap_reason": "Blast Radius scored 7, below 40; overall is capped at 70.",
+    "capped": true,
+    "letter": "C",
+    "mean": 71,
+    "score": 70
+  },
+  "repo": {
+    "analyzed_file_count": 118,
+    "bytes_scanned": 1204992,
+    "commit_sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+    "default_branch": "master",
+    "file_count": 412,
+    "languages": {
+      "Markdown": 4,
+      "Python": 84,
+      "TypeScript": 30
+    },
+    "skipped": {
+      "binary": 14,
+      "vendored": 280
+    },
+    "source": "https://github.com/example/demo",
+    "truncated": true
+  },
+  "run_ms": 8421,
+  "schema_version": "1.0"
+}

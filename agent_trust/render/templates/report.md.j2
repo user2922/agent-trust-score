@@ -1,0 +1,78 @@
+# Agent Trust Score — {{ repo.source }}
+
+**Grade {{ overall.letter }}** — {{ overall.score_text }}/100
+
+{% if overall.capped %}
+> **Capped.** {{ overall.cap_reason }}
+
+{% endif %}
+| Axis | Score | Grade | Failed checks |
+|---|---:|:---:|---:|
+{% for axis in axes %}
+| {{ axis.name }} | {{ axis.score_text }} | {{ axis.letter }} | {{ axis.failed }} |
+{% endfor %}
+
+Commit `{{ repo.commit }}` on `{{ repo.branch }}` · {{ repo.analyzed }} of {{ repo.total }} tracked files analyzed{% if repo.truncated %} · **truncated: this audit did not see the whole repository**{% endif %}
+
+{% if repo.languages %}
+Languages: {% for name, count in repo.languages %}{{ name }} ({{ count }}){% if not loop.last %}, {% endif %}{% endfor %}
+
+{% endif %}
+---
+
+## Fix these first
+
+{% if fixes %}
+Ordered by points recovered per hour of effort.
+
+| # | Fix | Axis | Points | Effort | Points/hour |
+|---:|---|---|---:|---:|---:|
+{% for fix in fixes %}
+| {{ loop.index }} | {{ fix.title }} | {{ fix.axis }} | {{ fix.points }} | {{ fix.effort }} | {{ fix.ratio }} |
+{% endfor %}
+
+{% for fix in fixes %}
+**{{ loop.index }}. {{ fix.title }}** — {{ fix.effort }}, recovers {{ fix.points }} points
+
+{% for step in fix.steps %}
+- {{ step }}
+{% endfor %}
+
+{% endfor %}
+{% else %}
+{{ no_fixes }}
+
+{% endif %}
+---
+
+{% for axis in axes %}
+## {{ axis.name }} — {{ axis.score_text }} ({{ axis.letter }})
+
+| Check | Status | Weight | Detail |
+|---|:---:|---:|---|
+{% for check in axis.checks %}
+| `{{ check.id }}` {{ check.title }} | {{ check.mark }} | {{ check.weight }} | {{ check.detail }} |
+{% endfor %}
+
+{% if axis.findings %}
+{% for finding in axis.findings %}
+**`{{ finding.check_id }}` · {{ finding.severity }} — {{ finding.title }}**
+
+{{ finding.explanation }}
+
+{% for item in finding.evidence %}
+- `{{ item.location }}`{% if item.snippet %} — `{{ item.snippet }}`{% endif %}
+
+{% endfor %}
+{% endfor %}
+{% else %}
+{{ no_findings }}
+
+{% endif %}
+{% endfor %}
+---
+
+Generated {{ generated_at }} · schema {{ schema_version }} · {% if llm.used %}explanations written by {{ llm.model }} (${{ llm.cost }}){% else %}template explanations{% if llm.fallback_reason %} ({{ llm.fallback_reason }}){% endif %}{% endif %}
+
+This report grades repository structure. It is not a security audit, and a
+passing grade certifies nothing.
