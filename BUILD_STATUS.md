@@ -14,8 +14,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 7 | CLI, MCP server, cache | **DONE** - Checkpoint 7 passed 10/10 |
 | 8 | Analyzer framework + Tool Surface | **DONE** - Checkpoint 8 passed 8/8 |
 | 9 | Blast Radius: secrets | **DONE** - Checkpoint 9 passed 8/8 |
-| 10 | Blast Radius: destructive ops | next |
-| 11 | Verifiability | — |
+| 10 | Blast Radius: destructive ops | **DONE** - Checkpoint 10 passed 8/8 |
+| 11 | Verifiability | next |
 | 12 | Context Quality | — |
 | 13 | Observability | — |
 | 14 | LLM enrichment | — |

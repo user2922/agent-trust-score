@@ -212,10 +212,14 @@ def test_absent_gitignore_fails(tmp_path: Path) -> None:
 # ── the unimplemented checks must not read as passes ────────────────────────
 
 
-def test_prompt_ten_checks_raise_rather_than_passing(tmp_path: Path) -> None:
+def test_the_prompt_ten_checks_are_implemented(tmp_path: Path) -> None:
+    # Superseded assertion. Through Prompt 9 these raised NotImplementedError so
+    # an unimplemented check could never read as a pass; Prompt 10 implemented
+    # them, and the guarantee is now that they return a real result.
     ctx = make_repo(tmp_path, {"a.py": "x = 1\n"})
-    with pytest.raises(NotImplementedError):
-        check_destructive_ops_guarded(ctx)
+    outcome = check_destructive_ops_guarded(ctx)
+    assert outcome.id == "BR-04"
+    assert outcome.status is not CheckStatus.NOT_APPLICABLE
 
 
 def test_axis_weights_still_total_one_hundred() -> None:

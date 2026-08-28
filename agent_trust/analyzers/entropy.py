@@ -1,9 +1,13 @@
 """Shannon entropy, used by exactly one rule.
 
 The generic secret rule (an assignment to a credential-shaped name) needs a way
-to tell ``API_KEY = "the quick brown fox jumps"`` from
-``API_KEY = "hunter2Xk9mQpZ4vL8nR3wY7"``. Provider patterns never consult this:
-a well-formed AWS key is a hit whatever its entropy happens to be.
+to tell an English sentence from twenty-four characters of base64. Provider
+patterns never consult this: a well-formed AWS key is a hit whatever its
+entropy happens to be.
+
+This docstring deliberately carries no credential-shaped literal. An earlier
+version illustrated the rule with a quoted high-entropy assignment, and the
+tool flagged its own source -- correctly.
 """
 
 from __future__ import annotations

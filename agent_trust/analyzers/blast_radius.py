@@ -1,10 +1,5 @@
 """Blast Radius -- what can go wrong if the agent acts?
 
-Prompt 9 implements the three secret-facing checks: BR-01, BR-02, BR-03. The
-four destructive-operation checks arrive in Prompt 10 and raise
-``NotImplementedError`` until then, because a check that silently returns
-``pass`` would inflate every grade on this axis without anyone noticing.
-
 BR-01 is the highest-stakes detector in the product. A false negative loses the
 whole claim; a false positive on a clean repo loses the demo. Both are defects,
 and the allowlist is a first-class part of the check rather than a filter bolted
@@ -187,42 +182,199 @@ def check_gitignore_coverage(ctx: RepoContext) -> CheckResult:
     return result(BR_03, CheckStatus.PARTIAL, f"{paths[0]} does not cover: {', '.join(missing)}.")
 
 
-def _not_implemented(spec: CheckSpec) -> CheckResult:
-    """Prompt 10 owns these.
+@dataclass(frozen=True)
+class OpHit:
+    """One destructive operation and the guard found near it, if any."""
 
-    Raising is deliberate. A check that returned ``pass`` while unimplemented
-    would hand every repo 50 free points on this axis, and nothing would look
-    wrong in the report.
+    path: str
+    line: int
+    family: str
+    guard: str | None
+
+
+def _guard_near(ctx: RepoContext, path: str, line_number: int) -> str | None:
+    """The guard protecting an operation, or None.
+
+    The window is GUARD_WINDOW_LINES either side of the operation. A guard
+    further away is almost certainly protecting something else, and counting it
+    would let one dry-run flag at the top of a 500-line file excuse every
+    destructive call below it.
     """
-    raise NotImplementedError(f"{spec.id} is implemented in Prompt 10")
+    lines = ctx.read_lines(path)
+    start = max(0, line_number - 1 - p.GUARD_WINDOW_LINES)
+    end = min(len(lines), line_number + p.GUARD_WINDOW_LINES)
+    window = "\n".join(lines[start:end])
+    for name, pattern in p.DESTRUCTIVE_GUARDS:
+        if pattern.search(window):
+            return name
+    return None
+
+
+def scan_destructive_ops(ctx: RepoContext) -> list[OpHit]:
+    """Every destructive operation found, each with its guard or None."""
+    hits: list[OpHit] = []
+    for path in ctx.files:
+        if _path_is_allowlisted(path):
+            continue
+        for number, line in enumerate(ctx.read_lines(path), start=1):
+            for family, pattern in p.DESTRUCTIVE_OPS:
+                if pattern.search(line):
+                    hits.append(
+                        OpHit(
+                            path=path,
+                            line=number,
+                            family=family,
+                            guard=_guard_near(ctx, path, number),
+                        )
+                    )
+                    break
+    return hits
+
+
+def _line_evidence(ctx: RepoContext, path: str, line_number: int, matcher: str) -> Evidence:
+    """Evidence quoting a whole line, trimmed and stripped by the redactor."""
+    lines = ctx.read_lines(path)
+    line = lines[line_number - 1] if 0 < line_number <= len(lines) else ""
+    return Evidence(path=path, line=line_number, snippet=snippet(line, 0, 0), matcher=matcher)
 
 
 def check_destructive_ops_guarded(ctx: RepoContext) -> CheckResult:
-    return _not_implemented(BR_04)
+    """BR-04: every destructive operation sits behind a guard."""
+    hits = scan_destructive_ops(ctx)
+    if not hits:
+        return result(BR_04, CheckStatus.PASS, "No destructive operations detected.")
+
+    unguarded = [hit for hit in hits if hit.guard is None]
+    if not unguarded:
+        guards = sorted({hit.guard for hit in hits if hit.guard})
+        return result(
+            BR_04,
+            CheckStatus.PASS,
+            f"All {len(hits)} destructive operation(s) guarded by: {', '.join(guards)}.",
+        )
+
+    evidence = [
+        _line_evidence(ctx, hit.path, hit.line, hit.family)
+        for hit in unguarded[:MAX_SECRET_EVIDENCE]
+    ]
+    families = ", ".join(sorted({hit.family for hit in unguarded}))
+    detail = (
+        f"{len(unguarded)} of {len(hits)} destructive operation(s) unguarded ({families}). "
+        f"Looked for a dry-run flag, a confirmation, an environment gate or a force flag "
+        f"within {p.GUARD_WINDOW_LINES} lines."
+    )
+    status = CheckStatus.PARTIAL if len(unguarded) < len(hits) else CheckStatus.FAIL
+    return result(BR_04, status, detail, evidence)
+
+
+def _is_client_reachable(path: str) -> bool:
+    """Reachability by path convention. Every finding states the method used."""
+    lowered = path.lower()
+    if lowered.endswith(p.CLIENT_REACHABLE_SUFFIXES):
+        return True
+    if p.CLIENT_FILE_MARKER.search(lowered):
+        return True
+    return any(f"/{directory}" in f"/{lowered}" for directory in p.CLIENT_REACHABLE_DIRS)
 
 
 def check_admin_credential_reach(ctx: RepoContext) -> CheckResult:
-    return _not_implemented(BR_05)
+    """BR-05: no admin-scoped credential named in client-reachable code."""
+    method = "Reachability was judged by path convention, not by import graph."
+    hits: list[Evidence] = []
+    for path in ctx.files:
+        if not _is_client_reachable(path) or _path_is_allowlisted(path):
+            continue
+        for number, line in enumerate(ctx.read_lines(path), start=1):
+            match = p.ADMIN_CREDENTIAL.search(line)
+            if match:
+                hits.append(
+                    Evidence(
+                        path=path,
+                        line=number,
+                        snippet=snippet(line, match.start(), match.end()),
+                        matcher="admin_credential",
+                    )
+                )
+
+    if not hits:
+        return result(
+            BR_05, CheckStatus.PASS, f"No admin credential in client-reachable paths. {method}"
+        )
+    return result(
+        BR_05,
+        CheckStatus.FAIL,
+        f"{len(hits)} admin credential reference(s) in client-reachable paths. {method}",
+        hits[:MAX_SECRET_EVIDENCE],
+    )
 
 
 def check_side_effect_switch(ctx: RepoContext) -> CheckResult:
-    return _not_implemented(BR_06)
+    """BR-06: payment, email and webhook calls sit behind a test or env switch."""
+    total = 0
+    unswitched: list[Evidence] = []
+    for path in ctx.files:
+        if _path_is_allowlisted(path):
+            continue
+        lines = ctx.read_lines(path)
+        has_switch = bool(p.TEST_MODE_SWITCH.search("\n".join(lines)))
+        for number, line in enumerate(lines, start=1):
+            if not p.SIDE_EFFECT_CALL.search(line):
+                continue
+            total += 1
+            if not has_switch:
+                unswitched.append(_line_evidence(ctx, path, number, "unswitched_side_effect"))
+
+    if total == 0:
+        return result(BR_06, CheckStatus.PASS, "No payment, email or webhook calls detected.")
+    if not unswitched:
+        return result(
+            BR_06, CheckStatus.PASS, f"All {total} side-effecting call(s) sit behind a switch."
+        )
+    status = CheckStatus.PARTIAL if len(unswitched) < total else CheckStatus.FAIL
+    return result(
+        BR_06,
+        status,
+        f"{len(unswitched)} of {total} side-effecting call(s) have no test-mode or "
+        "environment switch in the same file.",
+        unswitched[:MAX_SECRET_EVIDENCE],
+    )
 
 
 def check_ownership_config(ctx: RepoContext) -> CheckResult:
-    return _not_implemented(BR_07)
+    """BR-07: CODEOWNERS, or a branch-protection config."""
+    owners = [path for path in ctx.files if path in p.CODEOWNERS_PATHS]
+    if owners:
+        return result(
+            BR_07,
+            CheckStatus.PASS,
+            f"Found {owners[0]}.",
+            [evidence_for_path(owners[0], "codeowners")],
+        )
+    protection = ctx.paths_named(*p.PROTECTION_CONFIG_NAMES)
+    if protection:
+        return result(
+            BR_07,
+            CheckStatus.PASS,
+            f"Found {protection[0]}.",
+            [evidence_for_path(protection[0], "protection_config")],
+        )
+    return result(BR_07, CheckStatus.FAIL, searched("CODEOWNERS", "a branch-protection config"))
 
 
-IMPLEMENTED = (
+CHECKS = (
     check_committed_secrets,
     check_env_not_tracked,
     check_gitignore_coverage,
+    check_destructive_ops_guarded,
+    check_admin_credential_reach,
+    check_side_effect_switch,
+    check_ownership_config,
 )
 
 
 def run(ctx: RepoContext) -> Sequence[CheckResult]:
-    """Run the implemented Blast Radius checks, in spec order."""
-    return [check(ctx) for check in IMPLEMENTED]
+    """Run every Blast Radius check, in spec order."""
+    return [check(ctx) for check in CHECKS]
 
 
 register(AXIS, run)
