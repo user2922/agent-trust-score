@@ -145,3 +145,16 @@ output is what `ruff format --check` accepts. CI verifies with ruff either way.
   with no placeholder marker. Every value in it is synthetic.
 - The tool flagged its own `.gitignore` for missing credential patterns (BR-03
   partial). Fixed by taking the advice; blast_radius is now 100.
+
+## Demo assets still to do (raised 2026-08-28, deferred)
+
+1. **Make the repo public.** `gh repo edit --visibility public`. Safe to do: the
+   secret scan is clean and canary-verified, and the only key-shaped strings in
+   the tree are the synthetic fixture corpus. Do it after Prompt 15 so judges
+   land on a real README rather than the placeholder.
+2. **Vercel link.** This is a CLI, not a web app, so what deploys is the *report*
+   surface: pre-generated `report.html` for the clean and ugly fixtures, plus a
+   judge-supplied run, served as a static site. `render_html` already emits a
+   single self-contained file with no external requests, so the deploy is a
+   directory of static HTML and nothing else. Slot it after Prompt 16, when the
+   two fixtures exist and produce real reports.
