@@ -97,8 +97,24 @@ def check_mcp_server(ctx: RepoContext) -> CheckResult:
     )
 
 
+def _serves_an_api(ctx: RepoContext) -> str | None:
+    """The signal that this repo serves an API, or None if it does not.
+
+    Used to keep TS-02 off repos it cannot sensibly apply to. A CLI or a library
+    has no HTTP surface, and telling its author to publish an OpenAPI document
+    is bad advice rather than a finding.
+    """
+    declared = _dependencies(ctx) & p.WEB_FRAMEWORK_DEPENDENCIES
+    if declared:
+        return f"declares {sorted(declared)[0]}"
+    for path in ctx.paths_with_suffix(".py", ".ts", ".js", ".tsx", ".jsx"):
+        if p.WEB_SERVER_SOURCE.search(ctx.read_text(path)):
+            return f"serves routes in {path}"
+    return None
+
+
 def check_api_schema(ctx: RepoContext) -> CheckResult:
-    """TS-02: OpenAPI, Swagger, GraphQL or protobuf."""
+    """TS-02: OpenAPI, Swagger, GraphQL or protobuf -- if the repo serves an API."""
     found = ctx.paths_named(*p.API_SCHEMA_NAMES) or ctx.paths_with_suffix(*p.API_SCHEMA_SUFFIXES)
     if found:
         return result(
@@ -107,7 +123,20 @@ def check_api_schema(ctx: RepoContext) -> CheckResult:
             f"Found {found[0]}.",
             [evidence_for_path(found[0], "api_schema")],
         )
-    return result(TS_02, CheckStatus.FAIL, searched("openapi/swagger", "*.graphql", "*.proto"))
+
+    serves = _serves_an_api(ctx)
+    if serves is None:
+        return result(
+            TS_02,
+            CheckStatus.NOT_APPLICABLE,
+            "No HTTP or RPC surface detected, so a published API schema does not apply.",
+        )
+
+    return result(
+        TS_02,
+        CheckStatus.FAIL,
+        f"This repo {serves}. " + searched("openapi/swagger", "*.graphql", "*.proto"),
+    )
 
 
 def check_cli_entry_point(ctx: RepoContext) -> CheckResult:

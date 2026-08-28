@@ -21,14 +21,20 @@ apply to every file, every function and every prompt in this build.
 
 ## Pinned stack
 
-Python 3.12 · uv 0.12.7 · Typer 0.15.1 · Rich 13.9.4 · Pydantic 2.10.4 ·
-`mcp` 1.2.0 · `anthropic` 1.x · Jinja2 3.1.5 · pytest 8.3.4 + pytest-cov ·
-ruff 0.9.x · mypy 1.14.x (strict) · GitHub Actions. Git is invoked as a
-subprocess; no GitPython. No web framework, no database, no auth, no payments.
+**`pyproject.toml` is authoritative.** These are what Prompt 2a resolved against
+the index; every version written from memory beforehand was wrong except
+`anthropic`:
 
-Versions other than `uv` were written from memory when the spec was drafted.
-Prompt 2a resolves them against the index and **pins whatever actually
-resolves** — a pin that does not install is not a pin.
+Python 3.12 · uv 0.12.7 · Typer 0.27.2 · Rich 15.0.0 · Pydantic 2.13.4 ·
+`mcp` **2.1.1 (2.x — `FastMCP` is `MCPServer` from `mcp.server.mcpserver`)** ·
+`anthropic` 1.2.0 · Jinja2 3.1.6 · pytest 9.1.1 + pytest-cov · ruff 0.16.5 ·
+mypy 2.3.1 (strict) · cryptography 46.0.3 (newest with a win_arm64 wheel) ·
+GitHub Actions. Git is invoked as a subprocess; no GitPython. No web framework,
+no database, no auth, no payments.
+
+`black` is installed as an emergency formatter only. `ruff format` is the single
+formatting authority; the two disagree on implicit string concatenation, so
+never run both as gates.
 
 ---
 
@@ -73,8 +79,7 @@ ordering. The merge asserts this; it is enforcement, not a comment.
 
 Weights sum to 100 per axis; each analyzer asserts its own sum at import time.
 
-**Tool Surface (7):** TS-01 MCP server declared 20 · TS-02 machine-readable API
-schema 20 · TS-03 CLI entry point declared 15 · TS-04 entry points documented 10
+**Tool Surface (7):** TS-01 MCP server declared 20 · TS-02 machine-readable API schema 20 (N/A when the repo serves no API) · TS-03 CLI entry point declared 15 · TS-04 entry points documented 10
 · TS-05 typed public boundaries 15 · TS-06 parseable package manifest 10 ·
 TS-07 documented config contract 10
 

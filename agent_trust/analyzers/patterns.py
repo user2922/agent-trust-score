@@ -30,6 +30,49 @@ API_SCHEMA_NAMES = (
 )
 API_SCHEMA_SUFFIXES = (".graphql", ".gql", ".proto")
 
+# TS-02 only applies to a repo that actually serves an API. Asking a CLI or a
+# library for an OpenAPI document is bad advice, not a finding, so absence of
+# every signal below makes the check not_applicable rather than a failure.
+WEB_FRAMEWORK_DEPENDENCIES = frozenset(
+    {
+        "fastapi",
+        "flask",
+        "django",
+        "starlette",
+        "sanic",
+        "falcon",
+        "bottle",
+        "tornado",
+        "aiohttp",
+        "quart",
+        "connexion",
+        "strawberry-graphql",
+        "graphene",
+        "ariadne",
+        "grpcio",
+        "uvicorn",
+        "gunicorn",
+        "hypercorn",
+        "express",
+        "koa",
+        "fastify",
+        "@hapi/hapi",
+        "@nestjs/core",
+        "next",
+        "apollo-server",
+        "@apollo/server",
+        "graphql-yoga",
+        "restify",
+        "h3",
+    }
+)
+WEB_SERVER_SOURCE = re.compile(
+    r"(?:FastAPI\s*\(|Flask\s*\(|express\s*\(|createServer\s*\("
+    r"|@app\.(?:get|post|put|patch|delete|route)"
+    r"|(?:app|router)\.(?:get|post|put|patch|delete)\s*\(\s*['\"]/"
+    r"|app\.listen\s*\(|urlpatterns\s*=|ApolloServer\s*\()"
+)
+
 # ── TS-03 · CLI entry point ─────────────────────────────────────────────────
 
 CLI_FRAMEWORK_IMPORT = re.compile(

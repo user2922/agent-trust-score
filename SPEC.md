@@ -23,6 +23,7 @@ No later prompt restates these; they are imported or referenced.
 
 | Gap | Why it matters | Resolution |
 |---|---|---|
+| TS-02 penalised repos with no API surface | A CLI lost 20 points for lacking a REST schema it should not have; the fix list then advised building one | `not_applicable` unless a web-framework dependency or a route/listen call is detected (amended after Prompt 8, when the tool graded its own repo) |
 | "Byte-identical `report.json`" was impossible as written | `generated_at` and `run_ms` vary every run, so the determinism rule contradicted the schema | Determinism is defined over the **stable payload** — see below. Volatile fields are excluded from every determinism assertion |
 | `--fix` appeared in the CLI flag table but no prompt builds it | Prompt 7 instructs "every flag in SPEC.md"; the agent would have built an unspecified feature | `--fix` is **stretch, not v1**. Removed from the v1 flag table and recorded under Stretch |
 | Repo that cannot be cloned | Undefined behaviour on the most common failure | `AcquireError`, one line to stderr, exit 1, no traceback, temp dir removed |
@@ -160,7 +161,7 @@ the build may contain a band boundary.
 | ID | Check | Weight | Passes when |
 |---|---|---|---|
 | TS-01 | MCP server declared | 20 | `.mcp.json` / `mcp.json` present, or a dep on `mcp` / `@modelcontextprotocol/sdk`, or a `FastMCP(` / `Server(` construction |
-| TS-02 | Machine-readable API schema | 20 | `openapi.{json,yaml,yml}`, `swagger.*`, `*.graphql`, `schema.graphql`, or `*.proto` present |
+| TS-02 | Machine-readable API schema | 20 | `openapi.{json,yaml,yml}`, `swagger.*`, `*.graphql`, `schema.graphql`, or `*.proto` present. **`not_applicable` when the repo serves no API** — no web-framework dependency and no route or listen call in source. Asking a CLI or a library for an OpenAPI document is bad advice, not a finding |
 | TS-03 | CLI entry point declared | 15 | `[project.scripts]` in pyproject, `"bin"` in package.json, or an argparse / typer / click / commander / yargs import |
 | TS-04 | Entry points documented | 10 | README or docs contain a usage block showing an invocation with flags or `--help` |
 | TS-05 | Typed public boundaries | 15 | TS: `tsconfig.json` with `"strict": true`. PY: >=60% of public defs in sampled source files carry annotations (partial at >=30%) |

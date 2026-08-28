@@ -110,10 +110,6 @@ def test_schema_files_pass(tmp_path: Path, name: str) -> None:
     assert check_api_schema(ctx).status is CheckStatus.PASS
 
 
-def test_no_schema_fails(tmp_path: Path) -> None:
-    assert check_api_schema(make_repo(tmp_path, {"a.py": "x = 1\n"})).status is CheckStatus.FAIL
-
-
 # ── TS-03 CLI entry point ───────────────────────────────────────────────────
 
 
