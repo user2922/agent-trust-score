@@ -57,7 +57,10 @@ def _describe(error: ValidationError) -> str:
     for item in error.errors():
         field = str(item["loc"][0]) if item["loc"] else "?"
         # Report the name the user actually set, not the python attribute.
-        name = "ANTHROPIC_API_KEY" if field == "anthropic_api_key" else f"AGENT_TRUST_{field.upper()}"
+        if field == "anthropic_api_key":
+            name = "ANTHROPIC_API_KEY"
+        else:
+            name = f"AGENT_TRUST_{field.upper()}"
         parts.append(f"{name}: {item['msg']}")
     return "; ".join(parts)
 
@@ -71,6 +74,6 @@ def get_settings() -> Settings:
             variable; the traceback is not shown to the user.
     """
     try:
-        return Settings()  # type: ignore[call-arg]
+        return Settings()
     except ValidationError as exc:
         raise ConfigError(f"Invalid configuration -- {_describe(exc)}") from exc
