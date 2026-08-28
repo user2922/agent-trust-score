@@ -138,6 +138,7 @@ __all__ = [
 from agent_trust.analyzers import (  # noqa: E402, F401
     blast_radius,
     context_quality,
+    observability,
     tool_surface,
     verifiability,
 )

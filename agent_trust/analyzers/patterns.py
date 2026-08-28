@@ -436,3 +436,91 @@ CITED_PATH = re.compile(
     r"(?:py|pyi|ts|tsx|js|jsx|json|toml|ya?ml|md|rst|txt|sh|cfg|ini|lock|sql|go|rs|rb)"
     r")`"
 )
+
+# ── OB-01..OB-07 · observability ────────────────────────────────────────────
+
+STRUCTURED_LOGGING = re.compile(
+    r"\b(?:import\s+structlog|from\s+structlog\b|structlog\.get_logger"
+    r"|logging\.config\.(?:dictConfig|fileConfig)|logging\.getLogger\s*\("
+    r"|require\(['\"](?:pino|winston|bunyan)['\"]\)"
+    r"|from\s+['\"](?:pino|winston|bunyan)['\"]"
+    r"|winston\.createLogger|pino\s*\(|createLogger\s*\("
+    r"|opentelemetry\.sdk\._logs|LoggerProvider\s*\()"
+)
+STRUCTURED_LOGGING_DEPENDENCIES = frozenset(
+    {
+        "structlog",
+        "pino",
+        "winston",
+        "bunyan",
+        "loguru",
+        "opentelemetry-sdk",
+        "@opentelemetry/sdk-node",
+    }
+)
+
+LOGGER_CALL = re.compile(
+    r"\b(?:logger|log|LOG|_log)\.(?:debug|info|warning|warn|error|critical|exception|fatal)\s*\("
+)
+PRINT_CALL = re.compile(r"(?:^|[^.\w])print\s*\(|\bconsole\.(?:log|info|warn|error|debug)\s*\(")
+
+ERROR_REPORTING_DEPENDENCIES = frozenset(
+    {
+        "sentry-sdk",
+        "@sentry/node",
+        "@sentry/nextjs",
+        "@sentry/browser",
+        "@sentry/react",
+        "rollbar",
+        "bugsnag",
+        "@bugsnag/js",
+        "honeybadger",
+        "honeybadger-io",
+        "opentelemetry-api",
+        "@opentelemetry/api",
+        "opentelemetry-sdk-trace-node",
+    }
+)
+ERROR_REPORTING_INIT = re.compile(
+    r"\b(?:sentry_sdk\.init|Sentry\.init|rollbar\.init|Rollbar\s*\(|Bugsnag\.start"
+    r"|bugsnag\.configure|Honeybadger\.configure|honeybadger\.configure"
+    r"|TracerProvider\s*\(|trace\.set_tracer_provider)\s*\(?"
+)
+
+AUDIT_TRAIL = re.compile(
+    r"\b(?:audit_log|audit_logs|auditlog|activity_log|activity_logs|event_log|"
+    r"audit_trail|audit_events)\b"
+    r"|create\s+table\s+[\"'`]?(?:audit|activity|events?)\b"
+    r"|\bdef\s+(?:record_|write_|append_)?audit\w*\s*\(",
+    re.IGNORECASE,
+)
+# An actor + action + timestamp recorded together is an audit trail even when
+# nothing in the repo is called "audit".
+AUDIT_TRIPLE = re.compile(
+    r"(?is)\b(?:actor|user_id|performed_by|changed_by|author)\b.{0,200}?"
+    r"\b(?:action|event|operation|activity)\b.{0,200}?"
+    r"\b(?:timestamp|created_at|occurred_at|logged_at|at)\b"
+)
+
+CHANGELOG_NAMES = (
+    "CHANGELOG.md",
+    "CHANGELOG",
+    "CHANGELOG.rst",
+    "CHANGES.md",
+    "HISTORY.md",
+    "NEWS.md",
+)
+RELEASE_DIRS = ("releases/", "changelog.d/", ".changeset/")
+
+HEALTH_ENDPOINT = re.compile(
+    r"['\"]/(?:health|healthz|_health|status|readyz|livez|ping)['\"]"
+    r"|\bdef\s+health(?:_check|z)?\s*\(|@app\.(?:get|route)\s*\(\s*['\"]/(?:health|status)"
+)
+VERSION_FLAG = re.compile(r"--version\b|\"version\"\s*:|__version__\s*=|version_option")
+
+# OB-05 thresholds live with the analyzer; these are the subjects that count as
+# saying nothing at all.
+EMPTY_COMMIT_SUBJECT = re.compile(
+    r"(?i)^(?:wip|fix|fixes|update|updates|updated|changes?|stuff|misc|tmp|temp|asdf|test|"
+    r"minor|cleanup|refactor|edit|patch|\.+|-+)\W*$"
+)
