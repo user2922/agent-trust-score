@@ -34,3 +34,4 @@ report.md
 report.json
 report.html
 .cache/
+dist/

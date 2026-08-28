@@ -19,8 +19,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 12 | Context Quality | **DONE** - Checkpoint 12 passed 8/8 |
 | 13 | Observability | **DONE** - Checkpoint 13 passed 8/8 |
 | 14 | LLM enrichment | **DONE** - Checkpoint 14 passed 8/8 |
-| 15 | Packaging, docs, polish | next |
-| 16 | Testing, fixtures, CI | — |
+| 15 | Packaging, docs, polish | **DONE** - Checkpoint 15 passed 8/8 |
+| 16 | Testing, fixtures, CI | next |
 
 ## Decisions made in Prompt 1
 
