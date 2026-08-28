@@ -51,7 +51,7 @@ class GitFacts:
     commit_subjects: tuple[str, ...]
 
 
-def _run_git(args: list[str], cwd: Path, timeout: int = 30) -> subprocess.CompletedProcess[str]:
+def run_git(args: list[str], cwd: Path, timeout: int = 30) -> subprocess.CompletedProcess[str]:
     """Run one read-only git subcommand with a fixed argument list."""
     # Never prompt for credentials: a private URL must fail fast, not hang.
     # The environment is built in config.py, the only permitted reader of
@@ -141,7 +141,7 @@ def clone(url: str, into: Path, timeout: int) -> Path:
         str(target),
     ]
     try:
-        result = _run_git(args, cwd=into, timeout=timeout)
+        result = run_git(args, cwd=into, timeout=timeout)
     except subprocess.TimeoutExpired as exc:
         raise AcquireError(f"Clone timed out after {timeout}s.") from exc
     if result.returncode != 0:
@@ -157,17 +157,17 @@ def read_facts(repo: Path) -> GitFacts:
     every field comes back None or empty and the caller degrades accordingly
     (the cache is bypassed and OB-05 returns not_applicable).
     """
-    head = _run_git(["rev-parse", "HEAD"], cwd=repo)
+    head = run_git(["rev-parse", "HEAD"], cwd=repo)
     commit_sha = head.stdout.strip() if head.returncode == 0 else None
 
-    branch = _run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo)
+    branch = run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo)
     default_branch = branch.stdout.strip() if branch.returncode == 0 else None
     if default_branch == "HEAD":  # detached
         default_branch = None
 
     subjects: tuple[str, ...] = ()
     if commit_sha:
-        log = _run_git(["log", f"-{_COMMIT_SUBJECT_LIMIT}", "--format=%s", "--no-merges"], cwd=repo)
+        log = run_git(["log", f"-{_COMMIT_SUBJECT_LIMIT}", "--format=%s", "--no-merges"], cwd=repo)
         if log.returncode == 0:
             subjects = tuple(line for line in log.stdout.splitlines() if line.strip())
 

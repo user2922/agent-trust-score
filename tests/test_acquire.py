@@ -144,13 +144,13 @@ def test_clone_command_is_shallow_blobless_and_hookless(
     tmp_path: Path, repo: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     seen: list[list[str]] = []
-    real = acquire_module._run_git
+    real = acquire_module.run_git
 
     def spy(args: list[str], cwd: Path, timeout: int = 30) -> object:
         seen.append(args)
         return real(args, cwd, timeout)
 
-    monkeypatch.setattr(acquire_module, "_run_git", spy)
+    monkeypatch.setattr(acquire_module, "run_git", spy)
     dest = tmp_path / "dest"
     dest.mkdir()
     clone(repo.as_uri(), dest, timeout=30)
