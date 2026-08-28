@@ -79,10 +79,12 @@ def scan_secrets(ctx: RepoContext) -> tuple[list[SecretHit], int]:
     for path in ctx.files:
         path_allowlisted = _path_is_allowlisted(path)
         for number, line in enumerate(ctx.read_lines(path), start=1):
+            matched_here = False
             for matcher, pattern in p.SECRET_PROVIDERS:
                 match = pattern.search(line)
                 if not match:
                     continue
+                matched_here = True
                 if path_allowlisted or _value_is_allowlisted(match.group(0)):
                     suppressed += 1
                     continue
@@ -100,7 +102,10 @@ def scan_secrets(ctx: RepoContext) -> tuple[list[SecretHit], int]:
                     )
                 )
 
-            generic = p.SECRET_ASSIGNMENT.search(line)
+            # A provider pattern is the more specific claim. Letting the generic
+            # entropy rule fire on the same line reports one credential twice,
+            # in two places: a duplicated evidence row and an inflated count.
+            generic = None if matched_here else p.SECRET_ASSIGNMENT.search(line)
             if generic:
                 value = generic.group("value")
                 if path_allowlisted or _value_is_allowlisted(value) or not looks_random(value):
