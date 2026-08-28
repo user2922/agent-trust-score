@@ -10,12 +10,17 @@ import pytest
 from typer.testing import CliRunner
 
 from agent_trust import __version__, cache
+from agent_trust.analyzers import registered_axes
 from agent_trust.cli import EXIT_BELOW_GRADE, EXIT_ERROR, EXIT_OK, app
 from agent_trust.config import get_settings
-from agent_trust.models import load_report
+from agent_trust.models import AXIS_ORDER, load_report
 from agent_trust.pipeline import audit
 
 runner = CliRunner()
+
+
+def registered_axes_values() -> list[str]:
+    return [axis.value for axis in registered_axes()]
 
 
 def _git(args: list[str], cwd: Path) -> None:
@@ -51,7 +56,7 @@ def test_version_matches_the_package() -> None:
     assert result.stdout.strip() == __version__
 
 
-def test_walking_skeleton_runs_and_reports_five_na_axes(repo: Path, tmp_path: Path) -> None:
+def test_runs_end_to_end_and_scores_the_registered_axes(repo: Path, tmp_path: Path) -> None:
     result = runner.invoke(
         app, [str(repo), "--no-llm", "--out", str(tmp_path / "out"), "--format", "json"]
     )
@@ -59,8 +64,13 @@ def test_walking_skeleton_runs_and_reports_five_na_axes(repo: Path, tmp_path: Pa
 
     report = load_report((tmp_path / "out" / "report.json").read_text(encoding="utf-8"))
     assert len(report.axes) == 5
-    assert all(axis.score is None for axis in report.axes)
-    assert report.overall.letter.value == "N/A"
+
+    scored = {axis.key.value for axis in report.axes if axis.score is not None}
+    unscored = {axis.key.value for axis in report.axes if axis.score is None}
+    # Grows as prompts 9-13 land; an axis with no analyzer stays N/A rather
+    # than being scored zero.
+    assert scored == set(registered_axes_values())
+    assert scored | unscored == set(AXIS_ORDER)
 
 
 def test_missing_repo_exits_one_with_no_traceback(tmp_path: Path) -> None:
@@ -78,9 +88,17 @@ def test_unknown_axis_and_format_are_rejected(repo: Path) -> None:
 
 def test_min_grade_gate(repo: Path, tmp_path: Path) -> None:
     out = ["--out", str(tmp_path / "out"), "--no-llm", "--quiet"]
-    # Nothing is scored yet, so no floor can be satisfied -- and "could not
-    # measure" must not read as "passed".
+    # The fixture repo is a bare README: it fails every Tool Surface check.
     assert runner.invoke(app, [str(repo), *out, "--min-grade", "A"]).exit_code == EXIT_BELOW_GRADE
+    assert runner.invoke(app, [str(repo), *out, "--min-grade", "F"]).exit_code == EXIT_OK
+
+
+def test_min_grade_is_not_satisfied_by_an_unmeasured_repo(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A gate must never read "could not measure" as "passed".
+    monkeypatch.setattr("agent_trust.pipeline.REGISTRY", {})
+    out = ["--out", str(tmp_path / "out"), "--no-llm", "--quiet", "--no-cache"]
     assert runner.invoke(app, [str(repo), *out, "--min-grade", "F"]).exit_code == EXIT_BELOW_GRADE
 
 
@@ -104,8 +122,13 @@ def test_quiet_suppresses_the_summary_but_still_writes(repo: Path, tmp_path: Pat
     assert "Agent Trust Score" not in result.stdout
 
 
-def test_empty_state_does_not_claim_everything_passed(repo: Path, tmp_path: Path) -> None:
-    result = runner.invoke(app, [str(repo), "--no-llm", "--out", str(tmp_path / "out")])
+def test_unmeasured_repo_does_not_claim_everything_passed(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("agent_trust.pipeline.REGISTRY", {})
+    result = runner.invoke(
+        app, [str(repo), "--no-llm", "--no-cache", "--out", str(tmp_path / "out")]
+    )
     assert "Every check passed" not in result.stdout
     assert "nothing was verified" in result.stdout
 

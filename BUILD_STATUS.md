@@ -12,8 +12,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 5 | Scoring engine | **DONE** - Checkpoint 5 passed 8/8 |
 | 6 | Renderers | **DONE** - Checkpoint 6 passed 8/8 |
 | 7 | CLI, MCP server, cache | **DONE** - Checkpoint 7 passed 10/10 |
-| 8 | Analyzer framework + Tool Surface | next |
-| 9 | Blast Radius: secrets | — |
+| 8 | Analyzer framework + Tool Surface | **DONE** - Checkpoint 8 passed 8/8 |
+| 9 | Blast Radius: secrets | next |
 | 10 | Blast Radius: destructive ops | — |
 | 11 | Verifiability | — |
 | 12 | Context Quality | — |

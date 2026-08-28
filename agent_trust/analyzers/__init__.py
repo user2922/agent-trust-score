@@ -15,11 +15,81 @@ an unmeasured axis is not a failing one.
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 
 from agent_trust.inventory import RepoContext
-from agent_trust.models import AXIS_ORDER, AxisKey, CheckResult
+from agent_trust.models import AXIS_ORDER, AxisKey, CheckResult, CheckStatus, Evidence
+from agent_trust.redact import snippet
 
 Analyzer = Callable[[RepoContext], Sequence[CheckResult]]
+
+AXIS_TOTAL = 100
+
+
+@dataclass(frozen=True)
+class CheckSpec:
+    """The identity of one check: what it is called and what it is worth."""
+
+    id: str
+    title: str
+    weight: int
+
+
+def assert_weights(axis: AxisKey, specs: Sequence[CheckSpec]) -> None:
+    """Fail at import when an axis does not total 100.
+
+    A mistyped weight would skew every grade on that axis silently, so this is
+    checked when the module loads rather than when a report is rendered.
+    """
+    total = sum(spec.weight for spec in specs)
+    if total != AXIS_TOTAL:
+        raise ValueError(f"{axis.value} weights sum to {total}, expected {AXIS_TOTAL}")
+
+
+def result(
+    spec: CheckSpec,
+    status: CheckStatus,
+    detail: str = "",
+    evidence: Sequence[Evidence] = (),
+) -> CheckResult:
+    """Build a CheckResult with the earned points implied by its status."""
+    earned = {
+        CheckStatus.PASS: float(spec.weight),
+        CheckStatus.PARTIAL: spec.weight / 2,
+        CheckStatus.FAIL: 0.0,
+        CheckStatus.NOT_APPLICABLE: 0.0,
+    }[status]
+    return CheckResult(
+        id=spec.id,
+        title=spec.title,
+        status=status,
+        weight=spec.weight,
+        earned=earned,
+        detail=detail,
+        evidence=tuple(evidence),
+    )
+
+
+def evidence_at(ctx: RepoContext, path: str, line_number: int, start: int, end: int) -> Evidence:
+    """Evidence for a match, with the snippet built through the redactor."""
+    lines = ctx.read_lines(path)
+    line = lines[line_number - 1] if 0 < line_number <= len(lines) else ""
+    return Evidence(path=path, line=line_number, snippet=snippet(line, start, end))
+
+
+def evidence_for_path(path: str, matcher: str = "") -> Evidence:
+    """Evidence that names a file without quoting from it."""
+    return Evidence(path=path, matcher=matcher)
+
+
+def searched(*what: str) -> str:
+    """The detail line for a failed check: say what was looked for.
+
+    A finding with no statement of what was searched is an accusation rather
+    than a finding, and the reader cannot tell whether to disagree with it.
+    """
+    return "Searched for: " + "; ".join(what) + "."
+
 
 # Insertion order is canonical axis order; see register().
 REGISTRY: dict[AxisKey, Analyzer] = {}
@@ -47,4 +117,22 @@ def registered_axes() -> tuple[AxisKey, ...]:
     return tuple(REGISTRY)
 
 
-__all__ = ["REGISTRY", "Analyzer", "register", "registered_axes"]
+__all__ = [
+    "AXIS_TOTAL",
+    "REGISTRY",
+    "Analyzer",
+    "CheckSpec",
+    "assert_weights",
+    "evidence_at",
+    "evidence_for_path",
+    "register",
+    "registered_axes",
+    "result",
+    "searched",
+]
+
+
+# Imported for their registration side effects. This sits at the BOTTOM of the
+# module on purpose: each analyzer imports the helpers defined above, so moving
+# these up turns the dependency into a cycle.
+from agent_trust.analyzers import tool_surface  # noqa: E402, F401
