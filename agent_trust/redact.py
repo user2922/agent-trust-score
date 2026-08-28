@@ -49,3 +49,42 @@ def redact(value: str) -> str:
 def strip_control(text: str) -> str:
     """Remove control characters and ANSI escapes from repository-sourced text."""
     return _CONTROL.sub("", text)
+
+
+# Every Evidence snippet in the product is built here. models.Evidence rejects a
+# snippet longer than this or containing a control character, so a caller that
+# bypasses this function fails loudly rather than shipping a secret.
+MAX_SNIPPET = 200
+
+_CONTEXT = 60
+
+
+def snippet(line: str, match_start: int, match_end: int) -> str:
+    """Return one line of evidence with the matched span redacted.
+
+    ``line`` is raw repository content. The matched span is replaced with its
+    redacted form, the surrounding text is trimmed to keep the result within
+    ``MAX_SNIPPET`` characters, and control characters are removed.
+
+    Args:
+        line: the full source line the match was found on.
+        match_start: index of the first character of the match.
+        match_end: index one past the last character of the match.
+    """
+    if match_start < 0 or match_end > len(line) or match_start > match_end:
+        raise ValueError("match span is outside the line")
+
+    masked = redact(line[match_start:match_end])
+    before = strip_control(line[:match_start])
+    after = strip_control(line[match_end:])
+
+    # Keep the match visible: trim the context around it, not the match itself.
+    if len(before) > _CONTEXT:
+        before = "…" + before[-_CONTEXT:]
+    if len(after) > _CONTEXT:
+        after = after[:_CONTEXT] + "…"
+
+    out = f"{before}{masked}{after}".strip()
+    if len(out) > MAX_SNIPPET:
+        out = out[: MAX_SNIPPET - 1] + "…"
+    return out

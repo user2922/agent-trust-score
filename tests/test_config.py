@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import logging
 import subprocess
@@ -56,14 +57,28 @@ def test_settings_are_frozen() -> None:
 
 
 def test_config_is_the_only_environment_reader() -> None:
+    # Parsed, not grepped: a comment that merely mentions os.environ is not a
+    # read, and a substring check cannot tell the difference.
     root = Path(__file__).resolve().parent.parent / "agent_trust"
     offenders: list[str] = []
     for path in root.rglob("*.py"):
         if path.name == "config.py":
             continue
-        source = path.read_text(encoding="utf-8")
-        if "os.environ" in source or "getenv" in source:
-            offenders.append(path.name)
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            reads_environ = (
+                isinstance(node, ast.Attribute)
+                and node.attr == "environ"
+                and isinstance(node.value, ast.Name)
+                and node.value.id == "os"
+            )
+            calls_getenv = (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in {"getenv", "get_environ"}
+            )
+            if reads_environ or calls_getenv:
+                offenders.append(f"{path.name}:{node.lineno}")
     assert offenders == []
 
 

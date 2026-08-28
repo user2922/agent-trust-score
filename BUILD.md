@@ -24,10 +24,11 @@ checking whether a submission is real.
 hour · call the same audit from any agent host over MCP · gate CI on a minimum
 grade.
 
-**Tech stack (pinned):** Python 3.12 · uv 0.12.7 · Typer 0.15.1 · Rich 13.9.4 ·
-Pydantic 2.10.4 · `mcp` 1.2.0 · `anthropic` 1.x · Jinja2 3.1.5 · pytest 8.3.4 ·
-ruff 0.9.x · mypy 1.14.x (strict) · GitHub Actions. Git is invoked as a
-subprocess; no GitPython.
+**Tech stack (pinned, as resolved in Prompt 2a):** Python 3.12 · uv 0.12.7 ·
+Typer 0.27.2 · Rich 15.0.0 · Pydantic 2.13.4 · `mcp` **2.1.1 (2.x, not 1.x)** ·
+`anthropic` 1.2.0 · Jinja2 3.1.6 · pytest 9.1.1 · ruff 0.16.5 · mypy 2.3.1
+(strict) · cryptography 46.0.3 (newest with a win_arm64 wheel) · GitHub Actions.
+Git is invoked as a subprocess; no GitPython. `pyproject.toml` is authoritative.
 
 **Package:** `agent-trust-score` · **module:** `agent_trust` · **console
 scripts:** `agent-trust`, `agent-trust-mcp`.
@@ -35,7 +36,7 @@ scripts:** `agent-trust`, `agent-trust-mcp`.
 **Scoring:** five axes at equal weight — `tool_surface`, `blast_radius`,
 `verifiability`, `context_quality`, `observability` — 37 checks total
 (TS-01..07, BR-01..07, VF-01..08, CQ-01..08, OB-01..07). Grade bands, the
-below-40 cap rule and the committed-secret rule are defined once in `SPEC_DRAFT.md`
+below-40 cap rule and the committed-secret rule are defined once in `SPEC.md`
 and restated nowhere else.
 
 **AI:** yes, one call per audit — `claude-opus-5`, used for explanation prose
@@ -276,7 +277,8 @@ no test run, no hooks, no import of anything under the audited path.
 
 ### Checkpoint 2b
 
-- [ ] Auditing a path with no `.git` directory raises `NotAGitRepo` and exits 1 with a one-line message
+- [ ] Auditing a path with no `.git` directory raises `NotAGitRepo` with a
+      one-line message (the exit-1 mapping is verified at Checkpoint 7, which owns `cli.py`)
 - [ ] A URL on an unlisted host is rejected with `HostNotAllowed`; the same URL with `--allow-any-host` proceeds
 - [ ] A `file:///etc` source is rejected regardless of `--allow-any-host`
 - [ ] The clone command line contains `--depth 1`, `--filter=blob:none` and `core.hooksPath=/dev/null`

@@ -10,6 +10,7 @@ False, and the tool behaves as if ``--no-llm`` were passed.
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -63,6 +64,25 @@ def _describe(error: ValidationError) -> str:
             name = f"AGENT_TRUST_{field.upper()}"
         parts.append(f"{name}: {item['msg']}")
     return "; ".join(parts)
+
+
+def subprocess_env() -> dict[str, str]:
+    """The environment every git subprocess inherits.
+
+    Lives here because this module is the only permitted reader of ``os.environ``
+    (standing rule 2), and because the hardening below is configuration: git must
+    never prompt for credentials, or a private URL hangs the run instead of
+    failing it.
+    """
+    env = dict(os.environ)
+    env.update(
+        {
+            "GIT_TERMINAL_PROMPT": "0",
+            "GIT_ASKPASS": "echo",
+            "GCM_INTERACTIVE": "never",
+        }
+    )
+    return env
 
 
 @lru_cache(maxsize=1)

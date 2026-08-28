@@ -29,3 +29,44 @@ class ConfigError(AgentTrustError):
     """An environment variable is present but unusable."""
 
     code = "config_error"
+
+
+class AcquireError(AgentTrustError):
+    """A repository could not be obtained."""
+
+    code = "acquire_error"
+
+
+class NotAGitRepo(AcquireError):
+    """The path exists but has no .git directory."""
+
+    code = "not_a_git_repo"
+
+
+class HostNotAllowed(AcquireError):
+    """The clone URL points at a host outside the allowlist."""
+
+    code = "host_not_allowed"
+
+
+class TimeoutExceeded(AgentTrustError):
+    """The run exhausted its wall-clock budget."""
+
+    code = "timeout_exceeded"
+
+
+class RepoTooLarge(AgentTrustError):
+    """A repository exceeded a hard limit that truncation cannot absorb."""
+
+    code = "repo_too_large"
+
+
+class EnrichmentError(AgentTrustError):
+    """The enrichment call failed in a way the caller must know about.
+
+    Ordinary enrichment failures are NOT errors -- they degrade to template text
+    (standing rule B). This is raised only for a configured model that no longer
+    exists, which must surface rather than silently change behaviour.
+    """
+
+    code = "enrichment_error"
