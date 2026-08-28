@@ -96,3 +96,15 @@ run 33179088546.
 
 From here every prompt pushes, and CI is the lint/typecheck gate. Prompt 16 now
 extends this workflow with the e2e/determinism jobs rather than creating it.
+
+## Gate tooling — resolved after Prompt 2b
+
+The Application Control block on `ruff` and `mypy` cleared once the packages were
+reinstalled (`mypy` now reports `compiled: no` — the pure-Python build). Both run
+locally again, so `scripts/check_all.sh` gives full local signal and the BLOCKED
+path in it is now a safety net rather than the normal case. Do not delete that
+path: it is what stops a blocked tool from ever reading as a pass.
+
+`black` stays in the dev extras as the local formatter. It is pure Python, so it
+survives an Application Control block that would stop `ruff format`, and its
+output is what `ruff format --check` accepts. CI verifies with ruff either way.

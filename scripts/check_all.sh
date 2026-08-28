@@ -39,6 +39,7 @@ run() {
   fi
 }
 
+run "format"    uv run python -m black --check --line-length 100 agent_trust tests
 run "lint"      uv run ruff check .
 run "typecheck" uv run mypy agent_trust
 run "secrets"   bash scripts/check_secrets.sh

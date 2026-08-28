@@ -34,9 +34,7 @@ from agent_trust.logging import get_logger
 
 logger = get_logger("acquire")
 
-ALLOWED_HOSTS = frozenset(
-    {"github.com", "gitlab.com", "bitbucket.org", "codeberg.org"}
-)
+ALLOWED_HOSTS = frozenset({"github.com", "gitlab.com", "bitbucket.org", "codeberg.org"})
 
 # Hooks are disabled by pointing git at a directory that cannot contain any.
 _NULL_HOOKS = "/dev/null" if os.name != "nt" else "NUL"
@@ -92,9 +90,7 @@ def validate_url(url: str, allow_any_host: bool = False) -> str:
     else:
         parsed = urlparse(url)
         if parsed.scheme not in {"https", "ssh"}:
-            raise HostNotAllowed(
-                f"Unsupported scheme '{parsed.scheme}'. Use https or ssh."
-            )
+            raise HostNotAllowed(f"Unsupported scheme '{parsed.scheme}'. Use https or ssh.")
         host = parsed.hostname or ""
 
     if not host:
@@ -172,21 +168,15 @@ def read_facts(repo: Path) -> GitFacts:
 
     subjects: tuple[str, ...] = ()
     if commit_sha:
-        log = _run_git(
-            ["log", f"-{_COMMIT_SUBJECT_LIMIT}", "--format=%s", "--no-merges"], cwd=repo
-        )
+        log = _run_git(["log", f"-{_COMMIT_SUBJECT_LIMIT}", "--format=%s", "--no-merges"], cwd=repo)
         if log.returncode == 0:
             subjects = tuple(line for line in log.stdout.splitlines() if line.strip())
 
-    return GitFacts(
-        commit_sha=commit_sha, default_branch=default_branch, commit_subjects=subjects
-    )
+    return GitFacts(commit_sha=commit_sha, default_branch=default_branch, commit_subjects=subjects)
 
 
 @contextmanager
-def acquire(
-    source: str, *, allow_any_host: bool = False, timeout: int = 30
-) -> Iterator[Path]:
+def acquire(source: str, *, allow_any_host: bool = False, timeout: int = 30) -> Iterator[Path]:
     """Yield a local checkout of ``source``, cleaning up on every exit path.
 
     A local path is used in place and never deleted. A URL is cloned into a
