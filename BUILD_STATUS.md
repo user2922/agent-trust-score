@@ -6,9 +6,9 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 |---|---|---|
 | 1 | Spec validation & project setup | **DONE** — Checkpoint 1 passed 8/8 |
 | 2a | Project setup & toolchain | **DONE** - Checkpoint 2a passed 8/8 |
-| 2b | Safety foundation | next |
-| 3 | Report schema | — |
-| 4 | Inventory & RepoContext | — |
+| 2b | Safety foundation | **DONE** - Checkpoint 2b passed 8/8 |
+| 3 | Report schema | **DONE** - Checkpoint 3 passed 8/8 |
+| 4 | Inventory & RepoContext | next |
 | 5 | Scoring engine | — |
 | 6 | Renderers | — |
 | 7 | CLI, MCP server, cache | — |
