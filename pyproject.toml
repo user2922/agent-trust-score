@@ -62,6 +62,10 @@ ignore = ["S603", "S607"]
 # makes the table unreadable and every future edit a multi-line diff.
 "agent_trust/scoring/findings.py" = ["E501"]
 "agent_trust/scoring/fixes.py" = ["E501"]
+# The fixture builder holds the *contents* of a deliberately terrible repository:
+# unguarded SQL, a key-shaped literal, long single-line file bodies. Linting the
+# fixture as though it were production code would defeat its purpose.
+"scripts/build_fixtures.py" = ["E501", "S105", "S106", "S608"]
 
 [tool.mypy]
 python_version = "3.12"

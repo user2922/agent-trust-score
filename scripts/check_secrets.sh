@@ -28,10 +28,12 @@ fi
 # tests/test_analyzers_secrets.py is the ONE source file excluded, and only
 # because it is the detector's fixture corpus: it must hold real-shaped values
 # carrying no placeholder marker, or the tests could not prove BR-01 catches
-# them. Every value in it is synthetic. Keep this exclusion to that one path.
+# them. Every value in it is synthetic. scripts/build_fixtures.py is excluded
+# for the same reason: the ugly fixture must carry a marker-free key or it
+# proves nothing. Keep this exclusion to those two paths.
 mapfile -t FILES < <(git ls-files --cached --others --exclude-standard -- \
   ':!:SPEC.md' ':!:SPEC_DRAFT.md' ':!:BUILD.md' ':!:CLAUDE.md' ':!:docs/*' \
-  ':!:uv.lock' ':!:*.snap' ':!:tests/test_analyzers_secrets.py')
+  ':!:uv.lock' ':!:*.snap' ':!:tests/test_analyzers_secrets.py' ':!:scripts/build_fixtures.py')
 
 # A near-empty scan is indistinguishable from a broken one. This project has
 # dozens of scannable files; anything under 5 means the enumeration is wrong.

@@ -20,7 +20,7 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 13 | Observability | **DONE** - Checkpoint 13 passed 8/8 |
 | 14 | LLM enrichment | **DONE** - Checkpoint 14 passed 8/8 |
 | 15 | Packaging, docs, polish | **DONE** - Checkpoint 15 passed 8/8 |
-| 16 | Testing, fixtures, CI | next |
+| 16 | Testing, fixtures, CI | **DONE** - Checkpoint 16 passed 8/8 |
 
 ## Decisions made in Prompt 1
 
@@ -176,3 +176,21 @@ output is what `ruff format --check` accepts. CI verifies with ruff either way.
   than stopping.
 - The gate suite now takes ~80s; run `check_all.sh` with a timeout above two
   minutes.
+
+## Build complete
+
+All 17 prompts done. 385 tests, seven CI jobs green, self-grade A (92).
+
+The four hackathon success criteria, each asserted in CI rather than checked by
+hand:
+
+1. **Runs end to end on real repos** - verified against psf/requests,
+   pallets/click and tiangolo/typer, plus both fixtures.
+2. **MCP server responds** - three tools verified through real server dispatch.
+3. **A true positive on every axis of the ugly fixture** - asserted per axis in
+   tests/test_acceptance.py.
+4. **Zero false secrets on the clean fixture** - asserted, and separately
+   verified against 1,056 files of real public repositories.
+
+Remaining work is the two demo assets: make the repo public, and deploy the
+static report site.
