@@ -284,3 +284,63 @@ PROTECTION_CONFIG_NAMES = (
     "renovate.json",
     ".github/settings.yml",
 )
+
+# ── VF-01..VF-03 · tests ────────────────────────────────────────────────────
+
+TEST_FILE_PATTERNS = (
+    re.compile(r"(?:^|/)test_[^/]+\.py$"),
+    re.compile(r"(?:^|/)[^/]+_test\.py$"),
+    re.compile(r"(?:^|/)[^/]+\.test\.[jt]sx?$"),
+    re.compile(r"(?:^|/)[^/]+\.spec\.[jt]sx?$"),
+    re.compile(r"(?:^|/)[^/]+_spec\.rb$"),
+    re.compile(r"(?:^|/)[^/]+_test\.go$"),
+)
+TEST_DIRS = ("tests/", "test/", "spec/", "__tests__/")
+SOURCE_SUFFIXES = (".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rb", ".java", ".rs")
+
+TEST_RUNNERS = {
+    "pytest": re.compile(r"\bpytest\b"),
+    "vitest": re.compile(r"\bvitest\b"),
+    "jest": re.compile(r"\bjest\b"),
+    "mocha": re.compile(r"\bmocha\b"),
+    "unittest": re.compile(r"\bpython\s+-m\s+unittest\b"),
+    "go test": re.compile(r"\bgo\s+test\b"),
+    "cargo test": re.compile(r"\bcargo\s+test\b"),
+    "rspec": re.compile(r"\brspec\b"),
+}
+
+# ── VF-04 / VF-05 · CI ──────────────────────────────────────────────────────
+
+CI_CONFIG_GLOBS = (
+    ".github/workflows/",
+    ".gitlab-ci.yml",
+    ".circleci/config.yml",
+    "azure-pipelines.yml",
+    ".travis.yml",
+    "Jenkinsfile",
+)
+
+# ── VF-06..VF-08 · type checking, lint, commit gate ─────────────────────────
+
+TYPECHECK_CONFIG_NAMES = ("mypy.ini", ".mypy.ini", "pyrightconfig.json", "tsconfig.json")
+TYPECHECK_IN_MANIFEST = re.compile(r"\[tool\.(?:mypy|pyright)\]|\"typecheck\"\s*:")
+LINT_CONFIG_NAMES = (
+    ".eslintrc",
+    ".eslintrc.js",
+    ".eslintrc.json",
+    ".eslintrc.yml",
+    "eslint.config.js",
+    "eslint.config.mjs",
+    "biome.json",
+    ".ruff.toml",
+    "ruff.toml",
+    ".flake8",
+    "tox.ini",
+    ".rubocop.yml",
+    ".golangci.yml",
+    ".golangci.yaml",
+)
+LINT_IN_MANIFEST = re.compile(r"\[tool\.ruff\b|\"eslintConfig\"\s*:|\"lint\"\s*:")
+COMMIT_GATE_NAMES = (".pre-commit-config.yaml", ".pre-commit-config.yml", "lefthook.yml")
+COMMIT_GATE_DIRS = (".husky/",)
+COMMIT_GATE_IN_MANIFEST = re.compile(r"\"lint-staged\"\s*:|\"husky\"\s*:|\[tool\.pre-commit\b")
