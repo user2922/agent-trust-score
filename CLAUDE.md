@@ -152,3 +152,59 @@ any repo content beyond a 200-character redacted snippet.
   source is a proxy signal, not ground truth.
 - Prove a gate can fail before trusting it. A detector nobody has watched go red
   is decoration.
+
+---
+
+## Setup
+
+```
+uv sync --extra dev
+```
+
+Python 3.12 and git must already be on PATH. No API key is needed: without
+`ANTHROPIC_API_KEY` the tool runs in template mode and says so.
+
+## Run and test
+
+```
+uv run agent-trust . --no-llm        # grade this repo
+uv run agent-trust <url> --format html --out reports
+uv run agent-trust-mcp               # serve over MCP stdio
+
+uv run python -m pytest              # the test suite
+bash scripts/check_all.sh            # every gate, in order
+```
+
+`scripts/check_all.sh` is the single gate implementation; the Makefile delegates
+to it. A tool it cannot execute is reported BLOCKED and exits 2 — never a pass.
+
+## Architecture
+
+```
+agent_trust/
+  cli.py            Typer app          -- thin adapter over pipeline.audit
+  mcp_server.py     MCP stdio server   -- the other thin adapter (mcp 2.x)
+  pipeline.py       acquire -> inventory -> analyzers -> score -> enrich -> render
+  cache.py          content-addressed by commit SHA + schema version
+  config.py         the only reader of os.environ
+  models.py         every shape; AXES is the ordering authority
+  redact.py         the only module that touches a secret value
+  acquire.py        clone/resolve; never executes repository code
+  inventory.py      git ls-files, skip rules, budgets -> RepoContext
+  analyzers/        one module per axis; patterns.py owns every regex
+  scoring/          grades.py owns the bands; effort.py is data, not estimates
+  render/           terminal, markdown, html -- none of them computes a number
+docs/               FILE_LIST.md, and the generated CHECKS.md
+tests/              one test module per analyzer, plus fixtures/
+```
+
+## Do not touch
+
+- `tests/fixtures/report.golden.md`, `report.golden.html`, `golden_report.json` —
+  regenerate them from `tests/golden.py` rather than hand-editing; a manual edit
+  makes the render tests assert whatever was typed.
+- `uv.lock` — regenerate with `uv lock`, never edit by hand.
+- `docs/CHECKS.md` — generated from the CheckSpec tables (Prompt 15).
+- `tests/test_analyzers_secrets.py` fixture values — they must stay real-shaped
+  and marker-free or the detector tests stop proving anything. This is the one
+  file excluded from the repo's own secret scan.

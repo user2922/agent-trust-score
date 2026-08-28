@@ -16,8 +16,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 9 | Blast Radius: secrets | **DONE** - Checkpoint 9 passed 8/8 |
 | 10 | Blast Radius: destructive ops | **DONE** - Checkpoint 10 passed 8/8 |
 | 11 | Verifiability | **DONE** - Checkpoint 11 passed 8/8 |
-| 12 | Context Quality | next |
-| 13 | Observability | — |
+| 12 | Context Quality | **DONE** - Checkpoint 12 passed 8/8 |
+| 13 | Observability | next |
 | 14 | LLM enrichment | — |
 | 15 | Packaging, docs, polish | — |
 | 16 | Testing, fixtures, CI | — |

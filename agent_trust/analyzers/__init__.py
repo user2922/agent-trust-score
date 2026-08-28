@@ -137,6 +137,7 @@ __all__ = [
 # these up turns the dependency into a cycle.
 from agent_trust.analyzers import (  # noqa: E402, F401
     blast_radius,
+    context_quality,
     tool_surface,
     verifiability,
 )

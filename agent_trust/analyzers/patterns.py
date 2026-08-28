@@ -344,3 +344,95 @@ LINT_IN_MANIFEST = re.compile(r"\[tool\.ruff\b|\"eslintConfig\"\s*:|\"lint\"\s*:
 COMMIT_GATE_NAMES = (".pre-commit-config.yaml", ".pre-commit-config.yml", "lefthook.yml")
 COMMIT_GATE_DIRS = (".husky/",)
 COMMIT_GATE_IN_MANIFEST = re.compile(r"\"lint-staged\"\s*:|\"husky\"\s*:|\[tool\.pre-commit\b")
+
+# ── CQ-01..CQ-08 · context quality ──────────────────────────────────────────
+
+AGENT_DOC_PATHS = (
+    "CLAUDE.md",
+    "AGENTS.md",
+    ".cursorrules",
+    ".github/copilot-instructions.md",
+    ".cursor/rules",
+    "GEMINI.md",
+)
+README_PATHS = ("README.md", "README.rst", "README.txt", "readme.md")
+
+# Fenced code blocks are stripped before counting README words: a README that is
+# one long code block is not 500 words of orientation.
+CODE_FENCE = re.compile(r"```.*?```|~~~.*?~~~", re.DOTALL)
+INLINE_CODE = re.compile(r"`[^`]*`")
+
+# CQ-03 · setup. Heading OR the commands themselves -- a doc that shows the
+# commands without a matching heading still tells an agent what to run.
+SETUP_HEADING = re.compile(
+    r"(?im)^#{1,6}\s*.*\b(?:setup|set up|install|installation|getting started|quick ?start|"
+    r"prerequisites|development)\b"
+)
+SETUP_COMMAND = re.compile(
+    r"^\s*(?:\$\s*)?(?:"
+    r"(?:npm|pnpm|yarn|bun)\s+(?:install|ci|i)"
+    r"|(?:pip|pipx|uv)\s+(?:install|sync|add)"
+    r"|(?:poetry|pdm)\s+install"
+    r"|(?:bundle|cargo)\s+(?:install|build)"
+    r"|go\s+mod\s+download"
+    r"|make\s+(?:install|setup|bootstrap)"
+    r"|docker\s+compose\s+up"
+    r")\b",
+    re.MULTILINE,
+)
+
+# CQ-04 · architecture. A directory tree, a component list, or a named section.
+ARCHITECTURE_HEADING = re.compile(
+    r"(?im)^#{1,6}\s*.*\b(?:architecture|structure|layout|project structure|repository structure|"
+    r"how it works|design|overview of the code|modules|components|directory)\b"
+)
+DIRECTORY_TREE = re.compile(r"(?m)^\s*(?:[│├└|`+\-]{1,4}[\s─-]*)?[\w.-]+/\s*(?:#.*)?$")
+
+# CQ-05 · run and test.
+RUN_TEST_HEADING = re.compile(
+    r"(?im)^#{1,6}\s*.*\b(?:running|run|usage|tests?|testing|scripts|commands|development)\b"
+)
+TEST_COMMAND = re.compile(
+    r"^\s*(?:\$\s*)?(?:"
+    r"(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?test"
+    r"|(?:uv\s+run\s+)?(?:python\s+-m\s+)?(?:pytest|vitest|jest|mocha|rspec)"
+    r"|(?:go|cargo)\s+test"
+    r"|make\s+test"
+    r")\b",
+    re.MULTILINE,
+)
+RUN_COMMAND = re.compile(
+    r"^\s*(?:\$\s*)?(?:"
+    r"(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?(?:dev|start|serve)"
+    r"|uvicorn|flask\s+run|django-admin\s+runserver|rails\s+s"
+    r"|(?:uv\s+run|python\s+-m|poetry\s+run)\s+\w"
+    r"|make\s+(?:dev|run|start)"
+    r")",
+    re.MULTILINE,
+)
+
+# CQ-06 · conventions.
+CONVENTIONS_HEADING = re.compile(
+    r"(?im)^#{1,6}\s*.*\b(?:convention|conventions|style|coding standards|guidelines|patterns|"
+    r"code style|standards|rules)\b"
+)
+
+# CQ-07 · do-not-touch.
+DO_NOT_TOUCH = re.compile(
+    r"(?i)(?:do\s+not\s+(?:edit|touch|modify|change)|don'?t\s+(?:edit|touch|modify)|"
+    r"never\s+(?:edit|touch|modify)|generated\s+(?:file|code|automatically)|"
+    r"auto-?generated|hand-?edit|leave\s+.{0,20}\s+alone|off[- ]limits|vendored)"
+)
+
+# CQ-08 · do the cited paths resolve? Backticked path-like tokens.
+# A cited path must contain a directory separator or a known file extension, and
+# must contain a letter. Without the letter rule a version string in backticks --
+# `1.0` -- parses as a filename and is then reported as a broken link.
+CITED_PATH = re.compile(
+    r"`("
+    r"(?=[^`]*[A-Za-z])"
+    r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]*"
+    r"|(?=[^`]*[A-Za-z])[A-Za-z0-9_.-]+\."
+    r"(?:py|pyi|ts|tsx|js|jsx|json|toml|ya?ml|md|rst|txt|sh|cfg|ini|lock|sql|go|rs|rb)"
+    r")`"
+)
