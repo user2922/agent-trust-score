@@ -1,0 +1,70 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-trust-score"
+description = "Score any git repository on how safely an autonomous coding agent can operate inside it"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+dynamic = ["version"]
+dependencies = [
+    "typer==0.27.2",
+    "rich==15.0.0",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.15.0",
+    "mcp==2.1.1",
+    "anthropic==1.2.0",
+    "jinja2==3.1.6",
+    "pyyaml==6.0.3",
+    # Transitive via mcp -> pyjwt[crypto]. Pinned to the newest release that
+    # ships a win_arm64 wheel; 47+ has none, and this machine has no MSVC
+    # linker for the Rust source build. Revisit when upstream publishes one.
+    "cryptography==46.0.3",
+]
+
+[project.scripts]
+agent-trust = "agent_trust.cli:app"
+agent-trust-mcp = "agent_trust.mcp_server:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.16.5",
+    "mypy==2.3.1",
+]
+
+[tool.hatch.version]
+path = "agent_trust/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent_trust"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "S"]
+ignore = ["S603", "S607"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+disallow_untyped_defs = true
+warn_unreachable = true
+warn_return_any = true
+no_implicit_reexport = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=agent_trust --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.run]
+branch = true
+omit = ["agent_trust/mcp_server.py"]

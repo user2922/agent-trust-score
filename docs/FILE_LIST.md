@@ -7,8 +7,8 @@ ordering is a safety constraint, not a preference.
 | Prompt | Files |
 |---|---|
 | **1** | `CLAUDE.md` · `SPEC.md` · `docs/FILE_LIST.md` · `BUILD_STATUS.md` |
-| **2a** | `pyproject.toml` · `uv.lock` · `agent_trust/__init__.py` · `agent_trust/py.typed` · `agent_trust/config.py` · `agent_trust/logging.py` · `.env.example` · `.gitignore` · `scripts/check_secrets.sh` · `Makefile` |
-| **2b** | `agent_trust/redact.py` · `agent_trust/errors.py` · `agent_trust/acquire.py` · `agent_trust/limits.py` · `tests/test_redact.py` · `tests/test_acquire.py` |
+| **2a** | `pyproject.toml` · `uv.lock` · `agent_trust/__init__.py` · `agent_trust/py.typed` · `agent_trust/config.py` · `agent_trust/logging.py` · `agent_trust/redact.py` · `agent_trust/errors.py` · `.env.example` · `.gitignore` · `LICENSE` · `scripts/check_secrets.sh` · `scripts/check_all.sh` · `Makefile` · `tests/test_config.py` · `tests/test_redact.py` |
+| **2b** | `agent_trust/redact.py` (adds `snippet`) · `agent_trust/errors.py` (adds acquisition errors) · `agent_trust/acquire.py` · `agent_trust/limits.py` · `tests/test_acquire.py` |
 | **3** | `agent_trust/models.py` · `tests/test_models.py` |
 | **4** | `agent_trust/inventory.py` · `tests/test_inventory.py` |
 | **5** | `agent_trust/scoring/__init__.py` · `grades.py` · `findings.py` · `effort.py` · `fixes.py` · `tests/test_scoring.py` |

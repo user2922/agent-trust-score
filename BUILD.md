@@ -204,14 +204,20 @@ Do not write any module that reads a repository under audit yet.
 
 ### Checkpoint 2a
 
-- [ ] `uv run agent-trust --version` prints the same string as `agent_trust.__version__`
-- [ ] `uv run mypy agent_trust` exits 0 with strict mode enabled
-- [ ] `AGENT_TRUST_MAX_FILES=abc uv run agent-trust --version` fails with a message naming the variable
+- [ ] `uv build` produces a wheel whose version equals `agent_trust.__version__`
+      (the `agent-trust --version` form moves to Checkpoint 7, which owns `cli.py`)
+- [ ] `AGENT_TRUST_MAX_FILES=abc` makes `get_settings()` raise `ConfigError`
+      naming the variable, with no traceback in the message
 - [ ] Unsetting `ANTHROPIC_API_KEY` still boots, and `config.llm_available` is False
-- [ ] `grep -rn "os.environ\|getenv" agent_trust/ | grep -v config.py` returns nothing
-- [ ] `scripts/check_secrets.sh` exits non-zero after planting `sk-ant-` + 40 chars in a tracked file, and 0 once removed
-- [ ] `make check-all` runs lint, typecheck, secrets, test in that order
-- [ ] Every log line goes to stderr; `uv run agent-trust --version 1>/dev/null` still shows log output
+- [ ] `grep -rn "os.environ\|getenv" agent_trust/ --include=*.py | grep -v config.py`
+      returns nothing (without `--include` it matches `config.py`'s own bytecode)
+- [ ] `scripts/check_secrets.sh` exits 1 on a planted key-shaped value with no
+      placeholder marker, and 0 once removed — verified in both directions
+- [ ] The scanner exits 2, not 0, when it enumerates fewer than 5 files
+- [ ] `scripts/check_all.sh` runs lint, typecheck, secrets, test in that order,
+      and reports a tool it cannot execute as BLOCKED with a non-zero exit
+- [ ] A log record containing `\x1b[31m` serializes with no escape byte, and log
+      output goes to stderr while stdout stays clean
 
 > **Spot check — environment & secrets.** Before Prompt 2b:
 > - [ ] No secret value is readable from any committed file, including `.env.example`
@@ -577,6 +583,8 @@ registered, and reports five N/A axes honestly rather than inventing a score.
 - [ ] An MCP tool call that raises returns `{"error": {"code": ..., "message": ...}}` with no traceback
 - [ ] The MCP server writes nothing to stdout but protocol frames
 - [ ] `agent-trust . --format json --format md` writes exactly `report.json` and `report.md`
+- [ ] `agent-trust --version` prints the same string as `agent_trust.__version__`
+      (deferred here from Checkpoint 2a, which predates `cli.py`)
 
 > **Spot check — untrusted input and sandboxing.** Before Prompt 8:
 > - [ ] A repo containing a symlink to `/etc/passwd` is not read through; the link is skipped and recorded

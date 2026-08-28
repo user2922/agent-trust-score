@@ -5,8 +5,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | Prompt | Phase | Status |
 |---|---|---|
 | 1 | Spec validation & project setup | **DONE** — Checkpoint 1 passed 8/8 |
-| 2a | Project setup & toolchain | next |
-| 2b | Safety foundation | — |
+| 2a | Project setup & toolchain | **DONE** - Checkpoint 2a passed 8/8 |
+| 2b | Safety foundation | next |
 | 3 | Report schema | — |
 | 4 | Inventory & RepoContext | — |
 | 5 | Scoring engine | — |
@@ -44,3 +44,40 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 Verified present: git 2.53.0 · Python 3.12.10 · uv 0.12.7 · node v25.8.1.
 No `ANTHROPIC_API_KEY` configured — not needed until Prompt 14, and the tool
 ships usable without one.
+
+## Decisions made in Prompt 2a
+
+- **Every remembered version pin was wrong.** Resolved and pinned what actually
+  installs: typer 0.27.2 (was 0.15.1), rich 15.0.0 (13.9.4), pydantic 2.13.4
+  (2.10.4), **mcp 2.1.1 (1.2.0 - a major version)**, jinja2 3.1.6, pytest 9.1.1
+  (8.3.4), ruff 0.16.5 (0.9.x), mypy 2.3.1 (1.14.x). anthropic 1.2.0 was right.
+  Prompt 7 must treat the MCP SDK as 2.x and check its API against the installed
+  package rather than recalled 1.x shapes.
+- **`cryptography` pinned to 46.0.3.** It arrives transitively via
+  `mcp -> pyjwt[crypto]`. Version 47+ ships no `win_arm64` wheel, and this
+  machine has no MSVC linker for the Rust source build. 46.0.3 is the newest
+  release with an arm64 wheel.
+- **`redact.py` and `errors.py` moved from Prompt 2b to 2a.** `logging.py` needs
+  redaction and `config.py` needs an exception type; the alternative was a stub,
+  which standing rule 9 forbids. Prompt 2b still adds `snippet()` and the
+  acquisition errors. The ordering constraint (redaction before any content
+  reader) is strengthened, not weakened.
+- **`make` is not installed**, so the Makefile alone would have been an inert
+  gate. `scripts/check_all.sh` is the single implementation; the Makefile
+  delegates to it.
+- **ruff and mypy cannot execute on this machine** - Windows Application Control
+  blocks the ruff binary and mypy's compiled extension. Installing mypy from
+  sdist did not help. `check_all.sh` reports them BLOCKED and exits 2, so a run
+  is never mistaken for green. **They have no local signal until the repo reaches
+  CI.**
+- **Secret scanner canary-verified in both directions**: clean at baseline, exit
+  1 on a planted key-shaped value with no placeholder marker, clean again once
+  removed. It scans tracked *and* untracked-not-ignored files, allowlists by
+  value marker rather than by excluding `tests/`, always reports its suppression
+  count, and exits 2 when it enumerates fewer than 5 files.
+- **One real bug caught by the tests**: the control-character regex listed bare
+  `` before the ANSI-sequence alternative, so it stripped the ESC and left
+  `[31m` as visible text. Ordering fixed.
+- Three Checkpoint 2a items were unverifiable as written (they invoked
+  `agent-trust`, whose `cli.py` is Prompt 7's file). Rewritten to assert the same
+  behaviour at the layer that exists; the CLI form moved to Checkpoint 7.
