@@ -9,8 +9,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 2b | Safety foundation | **DONE** - Checkpoint 2b passed 8/8 |
 | 3 | Report schema | **DONE** - Checkpoint 3 passed 8/8 |
 | 4 | Inventory & RepoContext | **DONE** - Checkpoint 4 passed 8/8 |
-| 5 | Scoring engine | next |
-| 6 | Renderers | — |
+| 5 | Scoring engine | **DONE** - Checkpoint 5 passed 8/8 |
+| 6 | Renderers | next |
 | 7 | CLI, MCP server, cache | — |
 | 8 | Analyzer framework + Tool Surface | — |
 | 9 | Blast Radius: secrets | — |

@@ -57,6 +57,10 @@ ignore = ["S603", "S607"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S105", "S106"]
+# Prose data tables: one sentence per check id, one line each. Wrapping them
+# makes the table unreadable and every future edit a multi-line diff.
+"agent_trust/scoring/findings.py" = ["E501"]
+"agent_trust/scoring/fixes.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
