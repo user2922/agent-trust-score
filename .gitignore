@@ -35,3 +35,4 @@ report.json
 report.html
 .cache/
 dist/
+site/
