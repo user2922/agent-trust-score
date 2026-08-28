@@ -11,8 +11,8 @@ Read this, `CLAUDE.md` and `SPEC.md` at the start of every session.
 | 4 | Inventory & RepoContext | **DONE** - Checkpoint 4 passed 8/8 |
 | 5 | Scoring engine | **DONE** - Checkpoint 5 passed 8/8 |
 | 6 | Renderers | **DONE** - Checkpoint 6 passed 8/8 |
-| 7 | CLI, MCP server, cache | next |
-| 8 | Analyzer framework + Tool Surface | — |
+| 7 | CLI, MCP server, cache | **DONE** - Checkpoint 7 passed 10/10 |
+| 8 | Analyzer framework + Tool Surface | next |
 | 9 | Blast Radius: secrets | — |
 | 10 | Blast Radius: destructive ops | — |
 | 11 | Verifiability | — |
@@ -108,3 +108,21 @@ path: it is what stops a blocked tool from ever reading as a pass.
 `black` stays in the dev extras as the local formatter. It is pure Python, so it
 survives an Application Control block that would stop `ruff format`, and its
 output is what `ruff format --check` accepts. CI verifies with ruff either way.
+
+## Decisions made in Prompt 7
+
+- **mcp 2.x confirmed incompatible with recalled 1.x code.** `FastMCP` is gone;
+  it is `MCPServer` from `mcp.server.mcpserver`. The SDK raises a
+  `ModuleNotFoundError` naming the migration guide, which is how this was
+  caught. Tool metadata also uses `input_schema`, not `inputSchema`.
+- **`peek_commit_sha` uses `git ls-remote`**, so a cache hit costs no clone at
+  all rather than paying for one to discover the clone was unnecessary.
+- **Cache key is SHA + schema version**, and a template-only entry is a miss when
+  enrichment is requested. Writes are atomic (temp file + rename).
+- **`--min-grade` exits 2 on an unmeasured repo.** A CI gate must never read
+  "could not measure" as "passed".
+- **The empty state distinguishes unmeasured from clean.** "Nothing to fix.
+  Every check passed" would be the most dangerous sentence this product could
+  print while the analyzer registry is still empty.
+- The analyzer registry moved to Prompt 7 (from 8) because the pipeline has to
+  iterate something. Prompt 8 fills it; the empty registry yields five N/A axes.

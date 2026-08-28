@@ -13,6 +13,9 @@ from agent_trust.models import CheckStatus, Report
 
 NO_FINDINGS = "No findings on this axis."
 NO_FIXES = "Nothing to fix. Every check passed."
+# An unmeasured repo is not a clean one. Saying "every check passed" when no
+# check ran is the most dangerous sentence this product could print.
+NO_FIXES_UNMEASURED = "No checks ran, so nothing was verified and nothing is ranked."
 
 _STATUS_MARK = {
     CheckStatus.PASS: "pass",
@@ -93,6 +96,9 @@ def build(report: Report) -> dict[str, Any]:
         for fix in report.fixes
     ]
 
+    # An unmeasured repo is not a clean one; the empty state must say which.
+    measured = any(axis.score is not None for axis in report.axes)
+
     return {
         "schema_version": report.schema_version,
         "repo": {
@@ -121,5 +127,5 @@ def build(report: Report) -> dict[str, Any]:
         },
         "generated_at": report.generated_at.strftime("%Y-%m-%d %H:%M UTC"),
         "no_findings": NO_FINDINGS,
-        "no_fixes": NO_FIXES,
+        "no_fixes": NO_FIXES if measured else NO_FIXES_UNMEASURED,
     }

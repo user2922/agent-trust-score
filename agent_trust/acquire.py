@@ -174,6 +174,37 @@ def read_facts(repo: Path) -> GitFacts:
     return GitFacts(commit_sha=commit_sha, default_branch=default_branch, commit_subjects=subjects)
 
 
+def peek_commit_sha(source: str, *, allow_any_host: bool = False, timeout: int = 30) -> str | None:
+    """The commit SHA of ``source`` without cloning it.
+
+    A remote is queried with ``git ls-remote``, which transfers no objects. This
+    is what lets a cache hit skip the clone entirely rather than paying for one
+    to discover it was unnecessary.
+
+    Returns None when the SHA cannot be determined -- an empty repository, an
+    unreachable remote, or a path that is not a repo. A None SHA is never
+    cached, so the caller simply proceeds with a normal audit.
+    """
+    if not is_url(source):
+        try:
+            return read_facts(resolve_local(source)).commit_sha
+        except NotAGitRepo:
+            return None
+
+    try:
+        validate_url(source, allow_any_host=allow_any_host)
+    except HostNotAllowed:
+        return None
+
+    try:
+        result = run_git(["ls-remote", "--", source, "HEAD"], cwd=Path.cwd(), timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return None
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    return result.stdout.split()[0]
+
+
 @contextmanager
 def acquire(source: str, *, allow_any_host: bool = False, timeout: int = 30) -> Iterator[Path]:
     """Yield a local checkout of ``source``, cleaning up on every exit path.
